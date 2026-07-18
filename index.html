@@ -46,7 +46,7 @@
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-            <button onclick="switchView('log')" id="btnViewLog" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 transition-all shrink-0">工作日志</button>
+            <button onclick="switchView('log')" id="btnViewLog" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 transition-all shrink-0">每日进度</button>
             <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
                 <button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>
                 <button onclick="filterByOwner('ESU')" id="btnFilterESU" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">ESU</button>
@@ -165,7 +165,7 @@
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-                    今日智能汇报
+                    今日进度汇报
                 </h3>
                 <span id="smartLogDateDisplay" class="text-xs text-gray-500 font-medium"></span>
             </div>
@@ -174,7 +174,7 @@
             <div class="p-4 border-t border-gray-100 bg-white shrink-0">
                 <button onclick="submitSmartLogs()" class="w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-sm text-sm flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                    一键生成并记录日志
+                    一键生成并记录进度
                 </button>
             </div>
         </div>
@@ -256,17 +256,33 @@
                     <label class="block text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider">人员专属颜色配置</label>
                     <div class="flex flex-col gap-3">
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-semibold text-gray-700">ESU</span>
-                            <input type="color" id="setColESU" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm">
+                            <span class="text-sm font-semibold text-gray-700 w-12">ESU</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="setHexESU" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" oninput="document.getElementById('setColESU').value = this.value">
+                                <input type="color" id="setColESU" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" oninput="document.getElementById('setHexESU').value = this.value">
+                            </div>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-semibold text-gray-700">MIKO</span>
-                            <input type="color" id="setColMIKO" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm">
+                            <span class="text-sm font-semibold text-gray-700 w-12">MIKO</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="setHexMIKO" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" oninput="document.getElementById('setColMIKO').value = this.value">
+                                <input type="color" id="setColMIKO" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" oninput="document.getElementById('setHexMIKO').value = this.value">
+                            </div>
                         </div>
                         <div class="flex items-center justify-between">
-                            <span class="text-sm font-semibold text-gray-700">公共 / 全员</span>
-                            <input type="color" id="setColPub" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm">
+                            <span class="text-sm font-semibold text-gray-700 w-12 flex-1">公共/全员</span>
+                            <div class="flex items-center gap-2">
+                                <input type="text" id="setHexPub" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" oninput="document.getElementById('setColPub').value = this.value">
+                                <input type="color" id="setColPub" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" oninput="document.getElementById('setHexPub').value = this.value">
+                            </div>
                         </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">每日进度默认展开</span>
+                        <label class="relative inline-flex items-center cursor-pointer">
+                            <input type="checkbox" id="setLogExpand" class="sr-only peer">
+                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
+                        </label>
                     </div>
                 </div>
             </div>
@@ -291,6 +307,7 @@
         let tasks = [];
         let dailyLogs = [];
         let currentOwnerFilter = 'all';
+        let defaultLogExpand = false;
         const initialExtractedData = [];
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').value = todayStr;
@@ -305,9 +322,13 @@
         }
 
         function openSettings() {
+            document.getElementById('setHexESU').value = ownerColors['ESU'] || '#fde047';
             document.getElementById('setColESU').value = ownerColors['ESU'] || '#fde047';
+            document.getElementById('setHexMIKO').value = ownerColors['MIKO'] || '#c084fc';
             document.getElementById('setColMIKO').value = ownerColors['MIKO'] || '#c084fc';
+            document.getElementById('setHexPub').value = ownerColors['公共'] || '#93c5fd';
             document.getElementById('setColPub').value = ownerColors['公共'] || '#93c5fd';
+            document.getElementById('setLogExpand').checked = defaultLogExpand;
             document.getElementById('settingsModal').classList.remove('hidden');
         }
 
@@ -319,11 +340,15 @@
             ownerColors['ESU'] = document.getElementById('setColESU').value;
             ownerColors['MIKO'] = document.getElementById('setColMIKO').value;
             ownerColors['公共'] = document.getElementById('setColPub').value;
+            defaultLogExpand = document.getElementById('setLogExpand').checked;
             tasks.forEach(t => {
                 if(ownerColors[t.owner]) t.color = ownerColors[t.owner];
             });
             saveData();
             renderApp();
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                renderSmartLogForm();
+            }
             closeSettings();
             showToast('设置已保存并同步');
         }
@@ -960,13 +985,18 @@
                 const ownerTasks = displayTasks.filter(t => t.owner === owner && !t.completed && t.start <= todayStr && t.end >= todayStr);
                 if(ownerTasks.length > 0) {
                     hasAny = true;
+                    const hiddenClass = defaultLogExpand ? '' : 'hidden';
+                    const rotateClass = defaultLogExpand ? 'rotate-180' : '';
                     html += `
                     <div class="mb-5">
-                        <h4 class="font-bold text-sm mb-2.5 flex items-center gap-1.5" style="color: ${ownerColors[owner] || '#6b7280'}">
-                            <div class="w-2 h-2 rounded-full" style="background-color: ${ownerColors[owner] || '#6b7280'}"></div>
-                            ${owner} 的今日任务
-                        </h4>
-                        <div class="flex flex-col gap-3">
+                        <div class="cursor-pointer flex items-center justify-between group bg-white/50 px-2 py-1.5 rounded hover:bg-white transition-colors border border-transparent hover:border-gray-200" onclick="document.getElementById('log-sec-${owner}').classList.toggle('hidden'); document.getElementById('log-icon-${owner}').classList.toggle('rotate-180')">
+                            <h4 class="font-bold text-sm flex items-center gap-1.5" style="color: ${ownerColors[owner] || '#6b7280'}">
+                                <div class="w-2 h-2 rounded-full" style="background-color: ${ownerColors[owner] || '#6b7280'}"></div>
+                                ${owner} 的今日任务 <span class="text-[10px] text-gray-400 font-medium ml-1 bg-gray-100 px-1.5 rounded">${ownerTasks.length}</span>
+                            </h4>
+                            <svg id="log-icon-${owner}" class="w-4 h-4 text-gray-400 transition-transform duration-200 ${rotateClass}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                        <div id="log-sec-${owner}" class="flex flex-col gap-3 mt-2.5 ${hiddenClass}">
                     `;
                     ownerTasks.forEach(t => {
                         const isDue = t.end === todayStr;
@@ -976,7 +1006,14 @@
                                 <div class="text-[13px] font-bold text-gray-800 leading-snug flex-1">${t.name}</div>
                                 <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${isDue ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'} shrink-0">${isDue ? '今日截止' : '今日推进'}</span>
                             </div>
-                            <input type="text" class="smart-log-comp w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white mb-2" placeholder="填写完成度 (如: 100% 已下单)...">
+                            <div class="flex items-center gap-2 mb-2">
+                                <select class="smart-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white font-medium text-gray-700 outline-none">
+                                    <option value="推进中" selected>推进中</option>
+                                    <option value="已完成">已完成</option>
+                                    <option value="未完成">未完成</option>
+                                </select>
+                                <input type="text" class="smart-log-comp flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white outline-none" placeholder="填写完成度 (选填)...">
+                            </div>
                             <div class="smart-log-rich rich-input w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white min-h-[60px] overflow-x-hidden outline-none break-all" contenteditable="true" data-placeholder="万能输入框 (支持直接粘贴图片、链接或补充说明)..."></div>
                         </div>`;
                     });
@@ -1009,14 +1046,15 @@
             items.forEach(item => {
                 const owner = item.getAttribute('data-owner');
                 const taskName = item.querySelector('.text-\\[13px\\]').textContent;
+                const statusVal = item.querySelector('.smart-log-status').value;
                 const compVal = item.querySelector('.smart-log-comp').value.trim();
                 const richHtml = item.querySelector('.smart-log-rich').innerHTML.trim();
                 
-                if (compVal || (richHtml && richHtml !== '<br>')) {
+                if (statusVal !== '推进中' || compVal || (richHtml && richHtml !== '<br>')) {
                     hasContent = true;
                     if (!groupedLogs[owner]) groupedLogs[owner] = [];
-                    let contentStr = `• 【${taskName}】`;
-                    if (compVal) contentStr += ` 完成度: ${compVal}。`;
+                    let contentStr = `• 【${taskName}】 [${statusVal}]`;
+                    if (compVal) contentStr += ` 进度: ${compVal}。`;
                     if (richHtml && richHtml !== '<br>') {
                         contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600">${richHtml}</div>`;
                     }
@@ -1025,7 +1063,7 @@
             });
 
             if(!hasContent) {
-                showToast('请至少填写一项任务的进度', 'error');
+                showToast('请至少填写或更改一项任务的进度', 'error');
                 return;
             }
 
@@ -1034,11 +1072,12 @@
                 dailyLogs.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), owner, date: todayStr, content: fullContent });
             }
 
-            showToast('今日日志一键生成成功！');
+            showToast('今日进度一键生成成功！');
             saveData();
             renderLogs();
             
             items.forEach(item => {
+                item.querySelector('.smart-log-status').value = '推进中';
                 item.querySelector('.smart-log-comp').value = '';
                 item.querySelector('.smart-log-rich').innerHTML = '';
             });
@@ -1068,7 +1107,7 @@
             if (displayLogs.length === 0) {
                 container.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-gray-400">
-                        <p class="text-sm">当前视角下暂无相关日志记录</p>
+                        <p class="text-sm">当前视角下暂无相关记录</p>
                     </div>
                 `;
                 return;
