@@ -14,9 +14,6 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .gantt-grid { display: grid; grid-template-columns: 240px repeat(var(--total-days), minmax(110px, 1fr)); }
-        .sticky-col { position: sticky; left: 0; z-index: 20; background: white; }
-        .sticky-header { position: sticky; top: 0; z-index: 25; }
-        .sticky-corner { position: sticky; top: 0; left: 0; z-index: 30; background: white; }
         input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
         input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
         .task-completed-pattern { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2) 8px, transparent 8px, transparent 16px); opacity: 0.5; }
@@ -25,10 +22,17 @@
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
-        .category-row { grid-column: 1 / -1; }
         .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
         .rich-input img { max-height: 100px; border-radius: 4px; margin-top: 4px; }
         .rich-input a { color: #3b82f6; text-decoration: underline; }
+        
+        .gantt-corner { position: sticky; top: 0; z-index: 30; background: white; }
+        .gantt-header { position: sticky; top: 0; z-index: 25; }
+        @media (min-width: 768px) {
+            .gantt-corner { left: 0; }
+            .gantt-col-sticky { position: sticky; left: 0; z-index: 22; }
+            .gantt-task-sticky { position: sticky; left: 0; z-index: 21; }
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
@@ -45,26 +49,35 @@
                 </h1>
             </div>
         </div>
-        <div class="flex flex-wrap items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
-            <button onclick="switchView('log')" id="btnViewLog" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 transition-all shrink-0">每日进度</button>
-            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
-                <button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>
-                <button onclick="filterByOwner('ESU')" id="btnFilterESU" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">ESU</button>
-                <button onclick="filterByOwner('MIKO')" id="btnFilterMIKO" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">MIKO</button>
+        <div class="flex flex-wrap items-center gap-1.5 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            <button onclick="switchView('log')" id="btnViewLog" class="px-3.5 py-1.5 text-[13px] font-bold rounded-lg shadow-sm border border-transparent transition-all shrink-0">每日进度</button>
+            
+            <div class="relative custom-dropdown ml-1 md:ml-3 shrink-0">
+                <button id="viewDropdownBtn" type="button" onclick="document.getElementById('viewDropdownMenu').classList.toggle('hidden')" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md bg-white border border-gray-200 shadow-sm text-gray-800 hover:bg-gray-50 transition-all">
+                    <span id="currentViewText">全景看板</span>
+                    <svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div id="viewDropdownMenu" class="absolute left-0 mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50 py-1.5 origin-top-left">
+                    <button type="button" onclick="switchView('gantt'); closeViewDropdown('全景看板')" class="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">全景看板</button>
+                    <button type="button" onclick="switchView('split'); closeViewDropdown('分屏协作')" class="hidden md:block w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">分屏协作</button>
+                    <button type="button" onclick="switchView('pool'); closeViewDropdown('专注录入')" class="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">专注录入</button>
+                </div>
             </div>
-            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
-                <button onclick="switchView('gantt')" id="btnViewGantt" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全景看板</button>
-                <button onclick="switchView('split')" id="btnViewSplit" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">分屏协作</button>
-                <button onclick="switchView('pool')" id="btnViewPool" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">专注录入</button>
+
+            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0 ml-1 md:ml-3">
+                <button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>
+                <button onclick="filterByOwner('ESU')" id="btnFilterESU" class="px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">ESU</button>
+                <button onclick="filterByOwner('MIKO')" id="btnFilterMIKO" class="px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">MIKO</button>
             </div>
+
             <div class="text-[13px] text-gray-500 font-medium flex items-center gap-1.5 hidden shrink-0" id="syncStatus"></div>
-            <button onclick="generateTwoDaySummaryImage()" class="shrink-0 flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <button onclick="generateTwoDaySummaryImage()" class="shrink-0 flex items-center gap-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm ml-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                <span class="hidden md:inline">提取2日聚焦图</span>
+                <span class="hidden md:inline">2日聚焦图</span>
             </button>
-            <button onclick="pullDataFromCloud()" class="shrink-0 flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <button onclick="pullDataFromCloud()" class="shrink-0 flex items-center gap-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <span class="hidden md:inline">同步最新进度</span>
+                <span class="hidden md:inline">同步进度</span>
             </button>
         </div>
     </div>
@@ -78,7 +91,7 @@
                 </h2>
                 <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">等待添加任务...</div>
             </div>
-            <div class="flex-1 overflow-auto relative bg-gray-50/30" id="ganttContainer">
+            <div class="flex-1 overflow-auto relative bg-gray-50/30 select-none" id="ganttContainer">
                 <div id="ganttEmptyState" class="h-full flex flex-col items-center justify-center text-gray-400">
                     <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                     <p class="text-sm">请在下方录入任务，甘特图将自动生成并同步</p>
@@ -87,8 +100,8 @@
         </div>
     </div>
     
-    <div id="taskSection" class="h-auto md:h-[380px] flex flex-col md:flex-row gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
-        <div class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none max-h-[50vh] md:max-h-none">
+    <div id="taskSection" class="h-auto md:h-[380px] flex flex-col md:flex-row gap-5 md:gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
+        <div class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">添加新任务</h3>
             </div>
@@ -149,7 +162,7 @@
                 </form>
             </div>
         </div>
-        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden max-h-[50vh] md:max-h-none">
+        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden md:max-h-none">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">任务管理池</h3>
                 <span class="text-xs bg-white border border-gray-200 px-2.5 py-1 rounded-md text-gray-500 font-medium shadow-sm" id="taskCountBadge">共 0 项</span>
@@ -278,6 +291,13 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                        <span class="text-sm font-semibold text-gray-700">每日进度背景色</span>
+                        <div class="flex items-center gap-2">
+                            <input type="text" id="setHexLogBg" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" oninput="document.getElementById('setColLogBg').value = this.value">
+                            <input type="color" id="setColLogBg" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" oninput="document.getElementById('setHexLogBg').value = this.value">
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
                         <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">每日进度默认展开</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="setLogExpand" class="sr-only peer">
@@ -308,6 +328,7 @@
         let dailyLogs = [];
         let currentOwnerFilter = 'all';
         let defaultLogExpand = false;
+        let logBgColor = '#4f46e5'; 
         const initialExtractedData = [];
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').value = todayStr;
@@ -315,10 +336,56 @@
         document.getElementById('smartLogDateDisplay').textContent = todayStr;
         let dragInfo = null;
         
+        const ganttContainer = document.getElementById('ganttContainer');
+        let isDown = false;
+        let startX;
+        let scrollLeft;
+
+        ganttContainer.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.rounded-lg') || e.target.closest('.resize-handle') || e.target.closest('button')) return;
+            isDown = true;
+            ganttContainer.style.cursor = 'grabbing';
+            startX = e.pageX - ganttContainer.offsetLeft;
+            scrollLeft = ganttContainer.scrollLeft;
+        });
+
+        ganttContainer.addEventListener('mouseleave', () => {
+            isDown = false;
+            ganttContainer.style.cursor = '';
+        });
+
+        ganttContainer.addEventListener('mouseup', () => {
+            isDown = false;
+            ganttContainer.style.cursor = '';
+        });
+
+        ganttContainer.addEventListener('mousemove', (e) => {
+            if (!isDown) return;
+            e.preventDefault();
+            const x = e.pageX - ganttContainer.offsetLeft;
+            const walk = (x - startX) * 1.5; 
+            ganttContainer.scrollLeft = scrollLeft - walk;
+        });
+
+        document.addEventListener('click', (e) => {
+            if(!e.target.closest('.custom-dropdown')) {
+                document.getElementById('viewDropdownMenu')?.classList.add('hidden');
+            }
+        });
+
         function getTextColor(hex) {
-            if (hex === '#fde047') return '#854d0e'; 
-            if (hex === '#93c5fd') return '#1e3a8a'; 
-            return '#ffffff';
+            const h = hex.replace('#', '');
+            const r = parseInt(h.substr(0, 2), 16);
+            const g = parseInt(h.substr(2, 2), 16);
+            const b = parseInt(h.substr(4, 2), 16);
+            const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+            return (yiq >= 128) ? '#1e293b' : '#ffffff';
+        }
+
+        function applyLogBtnStyle() {
+            const btn = document.getElementById('btnViewLog');
+            btn.style.backgroundColor = logBgColor;
+            btn.style.color = getTextColor(logBgColor);
         }
 
         function openSettings() {
@@ -328,6 +395,8 @@
             document.getElementById('setColMIKO').value = ownerColors['MIKO'] || '#c084fc';
             document.getElementById('setHexPub').value = ownerColors['公共'] || '#93c5fd';
             document.getElementById('setColPub').value = ownerColors['公共'] || '#93c5fd';
+            document.getElementById('setHexLogBg').value = logBgColor;
+            document.getElementById('setColLogBg').value = logBgColor;
             document.getElementById('setLogExpand').checked = defaultLogExpand;
             document.getElementById('settingsModal').classList.remove('hidden');
         }
@@ -340,10 +409,12 @@
             ownerColors['ESU'] = document.getElementById('setColESU').value;
             ownerColors['MIKO'] = document.getElementById('setColMIKO').value;
             ownerColors['公共'] = document.getElementById('setColPub').value;
+            logBgColor = document.getElementById('setColLogBg').value;
             defaultLogExpand = document.getElementById('setLogExpand').checked;
             tasks.forEach(t => {
                 if(ownerColors[t.owner]) t.color = ownerColors[t.owner];
             });
+            applyLogBtnStyle();
             saveData();
             renderApp();
             if(!document.getElementById('logPageSection').classList.contains('hidden')) {
@@ -742,17 +813,20 @@
             const wrapper = document.createElement('div');
             wrapper.style.setProperty('--total-days', totalDays);
             wrapper.className = 'gantt-grid min-w-max pb-4';
+            
             const corner = document.createElement('div');
-            corner.className = 'sticky-corner p-3 border-b border-r border-gray-200 text-xs font-bold text-gray-500 tracking-wider flex items-end uppercase';
-            corner.textContent = '任务排期 (模块分组)';
+            corner.className = 'gantt-corner p-3 border-b border-r border-gray-200 text-xs font-bold text-gray-500 tracking-wider flex items-end uppercase';
+            corner.style.gridColumn = '1';
+            corner.textContent = '任务排期 (模块)';
             wrapper.appendChild(corner);
+
             let currentDay = new Date(minDate);
             const todayD = new Date(todayStr);
             for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
                 const isToday = currentDay.getTime() === todayD.getTime();
-                dayHeader.className = `sticky-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end ${isToday ? 'bg-red-50 text-red-500' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
+                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end ${isToday ? 'bg-red-50 text-red-500' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
                 const dText = document.createElement('span');
                 dText.className = 'font-semibold';
                 dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
@@ -760,14 +834,23 @@
                 wrapper.appendChild(dayHeader);
                 currentDay.setDate(currentDay.getDate() + 1);
             }
+            
             for (const category in groupedTasks) {
                 const catRowLabel = document.createElement('div');
-                catRowLabel.className = 'category-row sticky-col p-2 pl-4 border-b border-gray-200 bg-gray-100 flex items-center shadow-[0_1px_0_0_#e5e7eb] z-10';
+                catRowLabel.className = 'gantt-col-sticky p-2 pl-4 border-b border-gray-200 bg-gray-100 flex items-center shadow-[0_1px_0_0_#e5e7eb]';
+                catRowLabel.style.gridColumn = '1';
                 catRowLabel.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700">${category}</span>`;
                 wrapper.appendChild(catRowLabel);
+
+                const catRowTrack = document.createElement('div');
+                catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50';
+                catRowTrack.style.gridColumn = '2 / -1';
+                wrapper.appendChild(catRowTrack);
+
                 groupedTasks[category].forEach(task => {
                     const taskLabel = document.createElement('div');
-                    taskLabel.className = `sticky-col p-2.5 pl-6 border-b border-r border-gray-200 flex flex-col justify-center transition-colors ${task.completed ? 'bg-gray-50 opacity-60' : 'bg-white'}`;
+                    taskLabel.className = `gantt-task-sticky p-2.5 pl-6 border-b border-r border-gray-200 flex flex-col justify-center transition-colors ${task.completed ? 'bg-gray-50 opacity-60' : 'bg-white'}`;
+                    taskLabel.style.gridColumn = '1';
                     let detailsTooltip = task.details ? `title="${task.details.replace(/"/g, '&quot;')}"` : '';
                     taskLabel.innerHTML = `
                         <div class="text-[13px] truncate w-[220px] ${task.completed ? 'text-gray-400 line-through' : 'text-gray-700'}" ${detailsTooltip}>
@@ -920,54 +1003,52 @@
         setupCombobox('category', globalCategories);
         setupCombobox('owner', ownerColors);
         
+        window.closeViewDropdown = function(text) {
+            document.getElementById('viewDropdownMenu').classList.add('hidden');
+            if(text) document.getElementById('currentViewText').textContent = text;
+        };
+
         window.switchView = function(mode) {
             const gantt = document.getElementById('ganttSection');
             const pool = document.getElementById('taskSection');
             const logPage = document.getElementById('logPageSection');
             
-            const btnGantt = document.getElementById('btnViewGantt');
-            const btnSplit = document.getElementById('btnViewSplit');
-            const btnPool = document.getElementById('btnViewPool');
             const btnLog = document.getElementById('btnViewLog');
+            const dropdownBtn = document.getElementById('viewDropdownBtn');
             
-            const activeClass = ['bg-white', 'shadow-sm', 'text-gray-800'];
-            const inactiveClass = ['text-gray-500', 'bg-transparent', 'shadow-none'];
+            const activeDropdownClass = ['bg-white', 'shadow-sm', 'text-gray-800', 'border-gray-200'];
+            const inactiveDropdownClass = ['bg-transparent', 'text-gray-500', 'border-transparent', 'shadow-none'];
             
-            [btnGantt, btnSplit, btnPool, btnLog].forEach(btn => {
-                btn.classList.remove(...activeClass);
-                btn.classList.add(...inactiveClass);
-            });
+            gantt.classList.add('hidden');
+            pool.classList.add('hidden');
+            logPage.classList.add('hidden');
             
-            if (mode === 'gantt') {
-                gantt.classList.remove('hidden');
-                pool.classList.add('hidden');
-                logPage.classList.add('hidden');
-                btnGantt.classList.remove(...inactiveClass);
-                btnGantt.classList.add(...activeClass);
-            } else if (mode === 'split') {
-                gantt.classList.remove('hidden');
-                pool.classList.remove('hidden');
-                pool.classList.add('h-auto', 'md:h-[380px]');
-                pool.classList.remove('flex-1');
-                logPage.classList.add('hidden');
-                btnSplit.classList.remove(...inactiveClass);
-                btnSplit.classList.add(...activeClass);
-            } else if (mode === 'pool') {
-                gantt.classList.add('hidden');
-                pool.classList.remove('hidden');
-                pool.classList.remove('h-auto', 'md:h-[380px]');
-                pool.classList.add('flex-1');
-                logPage.classList.add('hidden');
-                btnPool.classList.remove(...inactiveClass);
-                btnPool.classList.add(...activeClass);
-            } else if (mode === 'log') {
-                gantt.classList.add('hidden');
-                pool.classList.add('hidden');
+            if (mode === 'log') {
                 logPage.classList.remove('hidden');
-                btnLog.classList.remove(...inactiveClass);
-                btnLog.classList.add(...activeClass);
+                btnLog.style.opacity = '1';
+                btnLog.classList.add('ring-2', 'ring-offset-1', 'ring-indigo-500/30');
+                dropdownBtn.classList.remove(...activeDropdownClass);
+                dropdownBtn.classList.add(...inactiveDropdownClass);
                 renderLogs();
                 renderSmartLogForm();
+            } else {
+                dropdownBtn.classList.remove(...inactiveDropdownClass);
+                dropdownBtn.classList.add(...activeDropdownClass);
+                btnLog.style.opacity = '0.7';
+                btnLog.classList.remove('ring-2', 'ring-offset-1', 'ring-indigo-500/30');
+
+                if (mode === 'gantt') {
+                    gantt.classList.remove('hidden');
+                } else if (mode === 'split') {
+                    gantt.classList.remove('hidden');
+                    pool.classList.remove('hidden');
+                    pool.classList.add('h-auto', 'md:h-[380px]');
+                    pool.classList.remove('flex-1');
+                } else if (mode === 'pool') {
+                    pool.classList.remove('hidden');
+                    pool.classList.remove('h-auto', 'md:h-[380px]');
+                    pool.classList.add('flex-1');
+                }
             }
         };
 
@@ -1149,6 +1230,7 @@
             container.innerHTML = html;
         }
         
+        applyLogBtnStyle();
         setTimeout(() => { switchView('gantt'); }, 50);
         pullDataFromCloud();
     </script>
