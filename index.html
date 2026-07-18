@@ -26,40 +26,50 @@
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
         .category-row { grid-column: 1 / -1; }
+        .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
+        .rich-input img { max-height: 100px; border-radius: 4px; margin-top: 4px; }
+        .rich-input a { color: #3b82f6; text-decoration: underline; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
-    <div class="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-5 shrink-0 z-50 relative shadow-sm">
-        <div class="flex items-center gap-3">
-            <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 text-white font-bold text-lg">G</div>
-            <h1 class="font-bold text-gray-800 text-lg tracking-tight">在线协作甘特图 <span class="text-xs text-gray-400 font-medium ml-2 px-2 py-0.5 bg-gray-100 rounded-md border border-gray-200">智能生成版</span></h1>
+    <div class="min-h-[56px] bg-white border-b border-gray-200 flex flex-wrap items-center justify-between px-3 md:px-5 py-2 md:py-0 shrink-0 z-50 relative shadow-sm gap-2">
+        <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 text-white font-bold text-lg">G</div>
+                <h1 class="font-bold text-gray-800 text-lg tracking-tight flex items-center">
+                    在线协作甘特图 
+                    <button onclick="openSettings()" class="text-xs text-indigo-600 font-medium ml-2 px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 rounded-md border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        设置
+                    </button>
+                </h1>
+            </div>
         </div>
-        <div class="flex items-center gap-4">
-            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
+        <div class="flex flex-wrap items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+            <button onclick="switchView('log')" id="btnViewLog" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 bg-gray-100 border border-gray-200 transition-all shrink-0">工作日志</button>
+            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
                 <button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>
                 <button onclick="filterByOwner('ESU')" id="btnFilterESU" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">ESU</button>
                 <button onclick="filterByOwner('MIKO')" id="btnFilterMIKO" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">MIKO</button>
             </div>
-            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200">
+            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
                 <button onclick="switchView('gantt')" id="btnViewGantt" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全景看板</button>
                 <button onclick="switchView('split')" id="btnViewSplit" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">分屏协作</button>
                 <button onclick="switchView('pool')" id="btnViewPool" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">专注录入</button>
-                <button onclick="switchView('log')" id="btnViewLog" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all">工作日志</button>
             </div>
-            <div class="text-[13px] text-gray-500 font-medium flex items-center gap-1.5 hidden" id="syncStatus"></div>
-            
-            <button onclick="generateTwoDaySummaryImage()" class="flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <div class="text-[13px] text-gray-500 font-medium flex items-center gap-1.5 hidden shrink-0" id="syncStatus"></div>
+            <button onclick="generateTwoDaySummaryImage()" class="shrink-0 flex items-center gap-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                提取2日聚焦图
+                <span class="hidden md:inline">提取2日聚焦图</span>
             </button>
-            <button onclick="pullDataFromCloud()" class="flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
+            <button onclick="pullDataFromCloud()" class="shrink-0 flex items-center gap-2 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-3 md:px-4 py-1.5 rounded-lg text-sm font-semibold transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                同步最新进度
+                <span class="hidden md:inline">同步最新进度</span>
             </button>
         </div>
     </div>
     
-    <div id="ganttSection" class="flex-1 flex flex-col p-4 pb-2 min-h-0 transition-all duration-300">
+    <div id="ganttSection" class="flex-1 flex flex-col p-2 md:p-4 pb-2 min-h-0 transition-all duration-300">
         <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative">
             <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-40">
                 <h2 class="text-base font-bold flex items-center gap-2 text-gray-800">
@@ -77,34 +87,29 @@
         </div>
     </div>
     
-    <div id="taskSection" class="h-[380px] flex gap-4 p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
-        <div class="w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
-            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+    <div id="taskSection" class="h-auto md:h-[380px] flex flex-col md:flex-row gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
+        <div class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none max-h-[50vh] md:max-h-none">
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">添加新任务</h3>
             </div>
             <div class="p-5 overflow-y-auto">
                 <form id="taskForm" class="flex flex-col gap-3.5">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">具体任务名称</label>
-                        <input type="text" id="taskName" required placeholder="例如：设计首页 Banner..." 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400">
+                        <input type="text" id="taskName" required placeholder="例如：设计首页 Banner..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务细节/备注 (选填)</label>
-                        <textarea id="taskDetails" rows="2" placeholder="填写具体的细项，如：采购3个不锈钢底座..." 
-                            class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400 resize-none"></textarea>
+                        <textarea id="taskDetails" rows="2" placeholder="填写具体的细项，如：采购3个不锈钢底座..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400 resize-none"></textarea>
                     </div>
                     <div class="grid grid-cols-2 gap-3 relative z-40">
                         <div class="relative custom-combobox">
                             <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">模块大类</label>
                             <div class="relative flex items-center">
-                                <input type="text" id="category" required placeholder="选择或输入新大类..." autocomplete="off"
-                                    class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
+                                <input type="text" id="category" required placeholder="选择或输入新大类..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
                                 <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
                                     <svg id="categoryArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    <button type="button" id="categoryClearBtn" onclick="clearInput('category')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                    </button>
+                                    <button type="button" id="categoryClearBtn" onclick="clearInput('category')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                                 </div>
                             </div>
                             <ul id="categoryDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
@@ -113,13 +118,10 @@
                             <div class="flex-1 custom-combobox relative">
                                 <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">负责人</label>
                                 <div class="relative flex items-center">
-                                    <input type="text" id="owner" required placeholder="选择或输入..." autocomplete="off"
-                                        class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
+                                    <input type="text" id="owner" required placeholder="选择或输入..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
                                     <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
                                         <svg id="ownerArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                        <button type="button" id="ownerClearBtn" onclick="clearInput('owner')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-                                        </button>
+                                        <button type="button" id="ownerClearBtn" onclick="clearInput('owner')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                                     </div>
                                 </div>
                                 <ul id="ownerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
@@ -147,8 +149,8 @@
                 </form>
             </div>
         </div>
-        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center">
+        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden max-h-[50vh] md:max-h-none">
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">任务管理池</h3>
                 <span class="text-xs bg-white border border-gray-200 px-2.5 py-1 rounded-md text-gray-500 font-medium shadow-sm" id="taskCountBadge">共 0 项</span>
             </div>
@@ -158,66 +160,52 @@
         </div>
     </div>
 
-    <div id="logPageSection" class="flex-1 flex gap-4 p-4 pb-2 min-h-0 transition-all duration-300 hidden bg-[#f8fafc]">
-        <div class="w-[360px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
-            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex items-center">
-                <h3 class="font-semibold text-gray-700 text-sm">提交进度</h3>
+    <div id="logPageSection" class="flex-1 flex flex-col md:flex-row gap-4 p-2 md:p-4 pb-2 min-h-0 transition-all duration-300 hidden bg-[#f8fafc]">
+        <div class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
+            <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
+                <h3 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
+                    <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                    今日智能汇报
+                </h3>
+                <span id="smartLogDateDisplay" class="text-xs text-gray-500 font-medium"></span>
             </div>
-            <div class="p-5 flex flex-col h-full">
-                <form id="logForm" class="flex flex-col gap-4">
-                    <input type="hidden" id="editLogId">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">汇报人</label>
-                        <select id="logOwner" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white">
-                            <option value="ESU">ESU</option>
-                            <option value="MIKO">MIKO</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">日期</label>
-                        <input type="date" id="logDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white text-gray-700">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">完成内容</label>
-                        <textarea id="logContent" rows="6" required placeholder="例如：跟进星空布包装进度，或完成TikTok首批视频剪辑..." class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50 resize-none bg-gray-50 focus:bg-white"></textarea>
-                    </div>
-                    <div class="flex gap-3 mt-2">
-                        <button type="button" id="cancelLogEditBtn" onclick="cancelEditLog()" class="hidden w-1/3 bg-gray-100 text-gray-600 font-medium py-2.5 rounded-xl hover:bg-gray-200 transition-colors shadow-sm text-sm">取消</button>
-                        <button type="submit" id="submitLogBtn" class="flex-1 bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-sm text-sm flex items-center justify-center gap-2">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                            记录进度
-                        </button>
-                    </div>
-                </form>
+            <div class="p-4 overflow-y-auto flex-1 bg-gray-50/30" id="smartLogContainer">
+            </div>
+            <div class="p-4 border-t border-gray-100 bg-white shrink-0">
+                <button onclick="submitSmartLogs()" class="w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-sm text-sm flex items-center justify-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
+                    一键生成并记录日志
+                </button>
             </div>
         </div>
 
-        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
-            <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-40">
+        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden flex-1">
+            <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-40 shrink-0">
                 <h2 class="text-base font-bold flex items-center gap-2 text-gray-800">
                     <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     历史进度流
                 </h2>
             </div>
-            <div class="flex-1 overflow-y-auto p-6 bg-gray-50/30" id="logListContainer">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/30" id="logListContainer">
             </div>
         </div>
     </div>
 
-    <div id="imageModal" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity">
+    <div id="imageModal" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
         <div class="bg-white p-6 rounded-2xl relative max-w-[560px] w-full shadow-2xl">
             <button onclick="document.getElementById('imageModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
             <h3 class="text-center font-bold text-gray-800 mb-1 text-lg">图片已生成</h3>
             <p class="text-center text-sm text-gray-500 mb-4">如果在浏览器中无法直接复制，请在下方图片<span class="font-bold text-indigo-500">右键选择“复制图片”</span></p>
-            <div class="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden p-2 max-h-[75vh] overflow-y-auto">
+            <div class="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden p-2 max-h-[70vh] overflow-y-auto">
                 <img id="generatedImg" src="" class="w-full shadow-sm rounded-lg pointer-events-auto">
             </div>
         </div>
     </div>
-    <div id="editModal" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity">
-        <div class="bg-white p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl">
+
+    <div id="editModal" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
+        <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl overflow-y-auto max-h-full">
             <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">修改任务</h3>
             <form id="editForm" class="flex flex-col gap-4">
                 <input type="hidden" id="editTaskId">
@@ -250,14 +238,46 @@
                     </div>
                 </div>
                 <div class="flex justify-end gap-3 mt-4">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200">取消</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700">保存修改</button>
+                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
+                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 text-sm">保存修改</button>
                 </div>
             </form>
         </div>
     </div>
+
+    <div id="settingsModal" class="fixed inset-0 z-[260] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
+        <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl">
+            <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2 flex items-center gap-2">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                全局设置
+            </h3>
+            <div class="flex flex-col gap-4">
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <label class="block text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider">人员专属颜色配置</label>
+                    <div class="flex flex-col gap-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-700">ESU</span>
+                            <input type="color" id="setColESU" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-700">MIKO</span>
+                            <input type="color" id="setColMIKO" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm">
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-700">公共 / 全员</span>
+                            <input type="color" id="setColPub" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm">
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-3 mt-5">
+                <button type="button" onclick="closeSettings()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
+                <button type="button" onclick="saveSettings()" class="px-4 py-2 bg-slate-900 text-white font-medium rounded-xl hover:bg-slate-800 text-sm">保存应用</button>
+            </div>
+        </div>
+    </div>
     
-    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 -translate-y-5 pointer-events-none z-[200] flex items-center gap-2">
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 -translate-y-5 pointer-events-none z-[400] flex items-center gap-2 max-w-[90%]">
         <span id="toastIcon"></span>
         <span id="toastMsg" class="text-sm font-medium"></span>
     </div>
@@ -271,30 +291,43 @@
         let tasks = [];
         let dailyLogs = [];
         let currentOwnerFilter = 'all';
-        const initialExtractedData = [
-            { name: '网站细节优化', category: '网站与产品', owner: 'ESU', color: '#fde047', start: '2026-07-17', end: '2026-07-17', details: '修改在出结果前输入邮箱\n模拟器优化' },
-            { name: '定价（单个&套餐）', category: '网站与产品', owner: 'ESU', color: '#fde047', start: '2026-07-17', end: '2026-07-21', details: '需要所有价格表，自动计算，包括利润' },
-            { name: '确认首批素材产量', category: '社媒与营销', owner: 'MIKO', color: '#c084fc', start: '2026-07-17', end: '2026-07-21', details: '等产品到货组装没问题再拍摄' },
-            { name: '社媒注册', category: '社媒与营销', owner: 'MIKO', color: '#c084fc', start: '2026-07-17', end: '2026-07-19', details: 'Tk, ins 账号注册' },
-            { name: '高定包装-星空布跟进', category: '供应链与物料', owner: '公共', color: '#93c5fd', start: '2026-07-17', end: '2026-07-18', details: '' },
-            { name: '水滴+水晶珠采买', category: '供应链与物料', owner: 'ESU', color: '#fde047', start: '2026-07-17', end: '2026-07-18', details: '珍珠底座, 蝙蝠底座, 等晚上到货看' },
-            { name: '确定ai会员, 视频, 图片', category: '社媒与营销', owner: '公共', color: '#93c5fd', start: '2026-07-17', end: '2026-07-22', details: 'codex? GPT, CLAUDE, 剪映海外' },
-            { name: '产品详情页', category: '网站与产品', owner: '公共', color: '#93c5fd', start: '2026-07-18', end: '2026-07-20', details: 'charm, 水晶珠等回复' },
-            { name: '产品上架', category: '网站与产品', owner: 'ESU', color: '#fde047', start: '2026-07-18', end: '2026-07-21', details: '主图, 描述之类\n品牌LOGO牌样式、材质' },
-            { name: '山姆方法测试-账号可用', category: '社媒与营销', owner: 'ESU', color: '#fde047', start: '2026-07-19', end: '2026-07-24', details: '' },
-            { name: '达人预选库构建', category: '社媒与营销', owner: '公共', color: '#93c5fd', start: '2026-07-19', end: '2026-08-06', details: 'XX个 S-A-KOL-KOC, 问AI分层标准' },
-            { name: 'Shopify主页视觉搭建', category: '网站与产品', owner: 'MIKO', color: '#c084fc', start: '2026-07-20', end: '2026-07-21', details: '' }
-        ].map((t, idx) => ({ ...t, id: Date.now().toString() + idx, completed: false }));
+        const initialExtractedData = [];
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('startDate').value = todayStr;
         document.getElementById('endDate').value = todayStr;
-        document.getElementById('logDate').value = todayStr;
+        document.getElementById('smartLogDateDisplay').textContent = todayStr;
         let dragInfo = null;
+        
         function getTextColor(hex) {
             if (hex === '#fde047') return '#854d0e'; 
             if (hex === '#93c5fd') return '#1e3a8a'; 
             return '#ffffff';
         }
+
+        function openSettings() {
+            document.getElementById('setColESU').value = ownerColors['ESU'] || '#fde047';
+            document.getElementById('setColMIKO').value = ownerColors['MIKO'] || '#c084fc';
+            document.getElementById('setColPub').value = ownerColors['公共'] || '#93c5fd';
+            document.getElementById('settingsModal').classList.remove('hidden');
+        }
+
+        function closeSettings() {
+            document.getElementById('settingsModal').classList.add('hidden');
+        }
+
+        function saveSettings() {
+            ownerColors['ESU'] = document.getElementById('setColESU').value;
+            ownerColors['MIKO'] = document.getElementById('setColMIKO').value;
+            ownerColors['公共'] = document.getElementById('setColPub').value;
+            tasks.forEach(t => {
+                if(ownerColors[t.owner]) t.color = ownerColors[t.owner];
+            });
+            saveData();
+            renderApp();
+            closeSettings();
+            showToast('设置已保存并同步');
+        }
+
         window.filterByOwner = function(owner) {
             currentOwnerFilter = owner;
             const activeClass = ['bg-white', 'shadow-sm', 'text-gray-800'];
@@ -310,7 +343,12 @@
                 }
             });
             renderApp();
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                renderLogs();
+                renderSmartLogForm();
+            }
         };
+
         async function generateTwoDaySummaryImage() {
             showToast('正在排版并生成图片...', 'loading');
             const now = new Date();
@@ -411,12 +449,14 @@
                 document.body.removeChild(wrapper);
             }
         }
+
         function enforceOwnerColors() {
             tasks.forEach(t => {
                 if (t.owner === '公共' || t.owner === '共同') t.owner = '公共'; 
                 if (ownerColors[t.owner]) t.color = ownerColors[t.owner];
             });
         }
+
         async function pullDataFromCloud() {
             showToast('正在获取云端最新进度...', 'loading');
             try {
@@ -436,6 +476,9 @@
                 tasks.forEach(t => { if(t.category) globalCategories.add(t.category); });
                 renderApp();
                 renderLogs();
+                if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                    renderSmartLogForm();
+                }
                 hideToast();
                 setTimeout(() => showToast('已与云端同步'), 300);
             } catch (error) {
@@ -443,6 +486,7 @@
                 setTimeout(() => showToast('拉取失败，请检查网络', 'error'), 300);
             }
         }
+
         async function pushDataToCloud() {
             const status = document.getElementById('syncStatus');
             status.classList.remove('hidden');
@@ -461,10 +505,12 @@
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> 云端保存失败`;
             }
         }
+
         function saveData() {
             enforceOwnerColors();
             pushDataToCloud();
         }
+
         document.getElementById('taskForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const taskName = document.getElementById('taskName').value.trim();
@@ -487,7 +533,9 @@
             document.getElementById('taskDetails').value = '';
             document.getElementById('taskName').focus();
             showToast('任务添加成功');
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
         });
+
         function openEditModal(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
@@ -500,9 +548,11 @@
             document.getElementById('editEndDate').value = task.end;
             document.getElementById('editModal').classList.remove('hidden');
         }
+
         function closeEditModal() {
             document.getElementById('editModal').classList.add('hidden');
         }
+
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const id = document.getElementById('editTaskId').value;
@@ -526,8 +576,10 @@
                 renderApp();
                 closeEditModal();
                 showToast('修改成功');
+                if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
             }
         });
+
         document.addEventListener('mousemove', (e) => {
             if (!dragInfo) return;
             const deltaX = e.clientX - dragInfo.startX;
@@ -539,6 +591,7 @@
                 dragInfo.element.style.width = `calc(${newWidth}px)`;
             }
         });
+
         document.addEventListener('mouseup', () => {
             if (!dragInfo) return;
             if (dragInfo.deltaDays !== 0) {
@@ -552,29 +605,36 @@
                         saveData();
                         renderApp();
                         showToast('日期已更新');
+                        if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
                     } else renderApp();
                 }
             } else renderApp();
             dragInfo = null;
         });
+
         window.deleteTask = function(id) {
             tasks = tasks.filter(t => t.id !== id);
             renderApp();
             saveData();
             showToast('任务已删除');
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
         };
+
         window.toggleComplete = function(id) {
             const task = tasks.find(t => t.id === id);
             if (task) {
                 task.completed = !task.completed;
                 renderApp();
                 saveData();
+                if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
             }
         };
+
         function renderApp() {
             renderTaskPool();
             renderGantt();
         }
+
         function renderTaskPool() {
             const pool = document.getElementById('taskPoolContainer');
             const empty = document.getElementById('poolEmptyState');
@@ -629,6 +689,7 @@
                 pool.appendChild(groupDiv);
             }
         }
+
         function renderGantt() {
             const container = document.getElementById('ganttContainer');
             const emptyState = document.getElementById('ganttEmptyState');
@@ -734,6 +795,7 @@
             container.innerHTML = '';
             container.appendChild(wrapper);
         }
+
         function groupBy(array, property) {
             return array.reduce((acc, obj) => {
                 const key = obj[property];
@@ -742,9 +804,11 @@
                 return acc;
             }, {});
         }
+
         function formatDate(date) {
             return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
         }
+
         function showToast(msg, type = 'success') {
             const toast = document.getElementById('toast');
             const toastMsg = document.getElementById('toastMsg');
@@ -761,11 +825,13 @@
             toast.classList.add('opacity-100', 'translate-y-0');
             if(type !== 'loading') setTimeout(() => { toast.classList.remove('opacity-100', 'translate-y-0'); toast.classList.add('opacity-0', '-translate-y-5'); }, 2500);
         }
+
         function hideToast() {
             const toast = document.getElementById('toast');
             toast.classList.remove('opacity-100', 'translate-y-0');
             toast.classList.add('opacity-0', '-translate-y-5');
         }
+
         function toggleClearBtn(inputId) {
             const input = document.getElementById(inputId);
             const arrow = document.getElementById(inputId + 'Arrow');
@@ -773,6 +839,7 @@
             if (input.value.length > 0) { arrow.classList.add('hidden'); clearBtn.classList.remove('hidden'); } 
             else { arrow.classList.remove('hidden'); clearBtn.classList.add('hidden'); }
         }
+
         window.clearInput = function(inputId) {
             const input = document.getElementById(inputId);
             input.value = '';
@@ -780,6 +847,7 @@
             input.focus();
             if(inputId === 'owner') { document.getElementById('taskColor').value = '#fde047'; }
         };
+
         function setupCombobox(inputId, dataSetOrObj) {
             const input = document.getElementById(inputId);
             const list = document.getElementById(inputId + 'DropdownList');
@@ -853,14 +921,16 @@
                 btnGantt.classList.add(...activeClass);
             } else if (mode === 'split') {
                 gantt.classList.remove('hidden');
-                pool.classList.remove('hidden', 'flex-1');
-                pool.classList.add('h-[380px]');
+                pool.classList.remove('hidden');
+                pool.classList.add('h-auto', 'md:h-[380px]');
+                pool.classList.remove('flex-1');
                 logPage.classList.add('hidden');
                 btnSplit.classList.remove(...inactiveClass);
                 btnSplit.classList.add(...activeClass);
             } else if (mode === 'pool') {
                 gantt.classList.add('hidden');
-                pool.classList.remove('hidden', 'h-[380px]');
+                pool.classList.remove('hidden');
+                pool.classList.remove('h-auto', 'md:h-[380px]');
                 pool.classList.add('flex-1');
                 logPage.classList.add('hidden');
                 btnPool.classList.remove(...inactiveClass);
@@ -872,55 +942,106 @@
                 btnLog.classList.remove(...inactiveClass);
                 btnLog.classList.add(...activeClass);
                 renderLogs();
+                renderSmartLogForm();
             }
         };
 
-        document.getElementById('logForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const editId = document.getElementById('editLogId').value;
-            const owner = document.getElementById('logOwner').value;
-            const date = document.getElementById('logDate').value;
-            const content = document.getElementById('logContent').value.trim();
-            if (editId) {
-                const log = dailyLogs.find(l => l.id === editId);
-                if (log) {
-                    log.owner = owner;
-                    log.date = date;
-                    log.content = content;
+        window.renderSmartLogForm = function() {
+            const container = document.getElementById('smartLogContainer');
+            let html = '';
+            const owners = ['ESU', 'MIKO', '公共'];
+            const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
+            
+            let hasAny = false;
+            
+            owners.forEach(owner => {
+                if (currentOwnerFilter !== 'all' && owner !== currentOwnerFilter) return;
+                
+                const ownerTasks = displayTasks.filter(t => t.owner === owner && !t.completed && t.start <= todayStr && t.end >= todayStr);
+                if(ownerTasks.length > 0) {
+                    hasAny = true;
+                    html += `
+                    <div class="mb-5">
+                        <h4 class="font-bold text-sm mb-2.5 flex items-center gap-1.5" style="color: ${ownerColors[owner] || '#6b7280'}">
+                            <div class="w-2 h-2 rounded-full" style="background-color: ${ownerColors[owner] || '#6b7280'}"></div>
+                            ${owner} 的今日任务
+                        </h4>
+                        <div class="flex flex-col gap-3">
+                    `;
+                    ownerTasks.forEach(t => {
+                        const isDue = t.end === todayStr;
+                        html += `
+                        <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm" data-owner="${owner}" data-taskid="${t.id}">
+                            <div class="flex items-start justify-between gap-2 mb-2">
+                                <div class="text-[13px] font-bold text-gray-800 leading-snug flex-1">${t.name}</div>
+                                <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${isDue ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'} shrink-0">${isDue ? '今日截止' : '今日推进'}</span>
+                            </div>
+                            <input type="text" class="smart-log-comp w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white mb-2" placeholder="填写完成度 (如: 100% 已下单)...">
+                            <div class="smart-log-rich rich-input w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white min-h-[60px] overflow-x-hidden outline-none break-all" contenteditable="true" data-placeholder="万能输入框 (支持直接粘贴图片、链接或补充说明)..."></div>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
                 }
-                showToast('进度修改成功');
-            } else {
-                dailyLogs.push({ id: Date.now().toString(), owner, date, content });
-                showToast('进度记录成功');
+            });
+
+            if(!hasAny) {
+                html = `
+                <div class="h-32 flex flex-col items-center justify-center text-gray-400">
+                    <svg class="w-8 h-8 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path></svg>
+                    <p class="text-xs">今天很清闲，没有需要推进的任务 🎉</p>
+                </div>
+                `;
             }
-            cancelEditLog();
+            container.innerHTML = html;
+        };
+
+        window.submitSmartLogs = function() {
+            const container = document.getElementById('smartLogContainer');
+            const items = container.querySelectorAll('[data-owner]');
+            if(items.length === 0) {
+                showToast('暂无需要汇报的任务', 'error');
+                return;
+            }
+            
+            let groupedLogs = {};
+            let hasContent = false;
+
+            items.forEach(item => {
+                const owner = item.getAttribute('data-owner');
+                const taskName = item.querySelector('.text-\\[13px\\]').textContent;
+                const compVal = item.querySelector('.smart-log-comp').value.trim();
+                const richHtml = item.querySelector('.smart-log-rich').innerHTML.trim();
+                
+                if (compVal || (richHtml && richHtml !== '<br>')) {
+                    hasContent = true;
+                    if (!groupedLogs[owner]) groupedLogs[owner] = [];
+                    let contentStr = `• 【${taskName}】`;
+                    if (compVal) contentStr += ` 完成度: ${compVal}。`;
+                    if (richHtml && richHtml !== '<br>') {
+                        contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600">${richHtml}</div>`;
+                    }
+                    groupedLogs[owner].push(contentStr);
+                }
+            });
+
+            if(!hasContent) {
+                showToast('请至少填写一项任务的进度', 'error');
+                return;
+            }
+
+            for (let owner in groupedLogs) {
+                const fullContent = groupedLogs[owner].join('\n\n');
+                dailyLogs.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), owner, date: todayStr, content: fullContent });
+            }
+
+            showToast('今日日志一键生成成功！');
             saveData();
             renderLogs();
-        });
-        
-        window.editLog = function(id) {
-            const log = dailyLogs.find(l => l.id === id);
-            if (log) {
-                document.getElementById('editLogId').value = log.id;
-                document.getElementById('logOwner').value = log.owner;
-                document.getElementById('logDate').value = log.date;
-                document.getElementById('logContent').value = log.content;
-                document.getElementById('submitLogBtn').innerHTML = `
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                    保存修改
-                `;
-                document.getElementById('cancelLogEditBtn').classList.remove('hidden');
-            }
-        };
-        
-        window.cancelEditLog = function() {
-            document.getElementById('editLogId').value = '';
-            document.getElementById('logContent').value = '';
-            document.getElementById('submitLogBtn').innerHTML = `
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
-                记录进度
-            `;
-            document.getElementById('cancelLogEditBtn').classList.add('hidden');
+            
+            items.forEach(item => {
+                item.querySelector('.smart-log-comp').value = '';
+                item.querySelector('.smart-log-rich').innerHTML = '';
+            });
         };
         
         window.deleteLog = function(id) {
@@ -936,7 +1057,7 @@
                 container.innerHTML = `
                     <div class="h-full flex flex-col items-center justify-center text-gray-400">
                         <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        <p class="text-sm">暂无进度流，在左侧记录你们的第一条动态吧</p>
+                        <p class="text-sm">暂无进度流，在左侧一键生成你们的第一条动态吧</p>
                     </div>
                 `;
                 return;
@@ -973,12 +1094,9 @@
                                 <div class="font-bold text-xs mb-1.5 flex items-center gap-2" style="color: ${getTextColor(color) !== '#ffffff' ? getTextColor(color) : color}">
                                     <span class="px-2 py-0.5 rounded shadow-sm" style="background-color: ${color}; color: ${getTextColor(color)}">${log.owner}</span>
                                 </div>
-                                <div class="text-gray-700 whitespace-pre-wrap leading-relaxed">${log.content}</div>
+                                <div class="text-gray-700 leading-relaxed">${log.content.replace(/\n/g, '<br>')}</div>
                             </div>
                             <div class="absolute right-3 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                <button type="button" onclick="editLog('${log.id}')" class="text-gray-400 hover:text-indigo-500 bg-gray-50 rounded p-1.5 shadow-sm border border-gray-200">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </button>
                                 <button type="button" onclick="deleteLog('${log.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 rounded p-1.5 shadow-sm border border-gray-200">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
