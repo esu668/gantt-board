@@ -900,13 +900,12 @@
             wrapper.appendChild(corner);
 
             let currentDay = new Date(minDate);
-            const parts = todayStr.split('-');
-            const todayD = new Date(parts[0], parts[1] - 1, parts[2]);
             for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
+                const currentDateStr = formatDate(currentDay);
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
-                const isToday = currentDay.getTime() === todayD.getTime();
-                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end ${isToday ? 'bg-red-50 text-red-500 shadow-[inset_-2px_0_4px_rgba(0,0,0,0.02),inset_2px_0_4px_rgba(0,0,0,0.02)]' : (isWeekend ? 'bg-slate-100/60 text-gray-400' : 'bg-white text-gray-500')}`;
+                const isToday = currentDateStr === todayStr;
+                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end ${isToday ? 'bg-red-50 text-red-600 shadow-[inset_2px_0_6px_rgba(0,0,0,0.05),inset_-2px_0_6px_rgba(0,0,0,0.05)] border-red-200' : (isWeekend ? 'bg-slate-100/70 text-gray-400' : 'bg-white text-gray-500')}`;
                 const dText = document.createElement('span');
                 dText.className = 'font-semibold';
                 dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
@@ -950,6 +949,8 @@
                     
                     let pastPercentage = 0;
                     if (!task.completed) {
+                        const parts = todayStr.split('-');
+                        const todayD = new Date(parts[0], parts[1] - 1, parts[2]);
                         let pDays = Math.round((todayD - taskStart) / (1000 * 60 * 60 * 24));
                         if (pDays > 0) {
                             if (pDays > duration) pDays = duration;
@@ -959,9 +960,11 @@
 
                     for (let i = 0; i < totalDays; i++) {
                         const cell = document.createElement('div');
+                        const currentDateStr = formatDate(currentDay);
                         const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
-                        const isToday = currentDay.getTime() === todayD.getTime();
-                        cell.className = `border-b border-r border-gray-100 relative ${isToday ? 'bg-red-50/30' : (isWeekend ? 'bg-slate-100/60' : 'bg-white')}`;
+                        const isToday = currentDateStr === todayStr;
+                        cell.className = `border-b border-r border-gray-100 relative ${isToday ? 'bg-red-50/50 shadow-[inset_2px_0_6px_rgba(0,0,0,0.05),inset_-2px_0_6px_rgba(0,0,0,0.05)]' : (isWeekend ? 'bg-slate-100/70' : 'bg-white')}`;
+                        
                         if (i === startIndex) {
                             const bar = document.createElement('div');
                             const visibleDuration = Math.min(duration, totalDays - startIndex);
@@ -972,7 +975,7 @@
                             bar.style.color = textColor;
                             bar.style.zIndex = '10';
                             bar.onclick = (e) => {
-                                if (e.target.classList.contains('resize-handle')) return;
+                                if (e.target.closest('button') || e.target.classList.contains('resize-handle')) return;
                                 openEditModal(task.id);
                             };
                             const ownerInitial = task.owner.charAt(0).toUpperCase();
@@ -1183,12 +1186,15 @@
                 
                 ownerTasks.forEach(t => {
                     const isDue = t.end === currentLogDate;
+                    const safeDetailsForTitle = t.details ? t.details.replace(/"/g, '&quot;') : '';
+                    const safeDetailsForAlert = t.details ? t.details.replace(/'/g, "\\'").replace(/\n/g, '\\n') : '';
+                    
                     html += `
                     <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm" data-owner="${owner}" data-taskid="${t.id}">
                         <div class="flex items-start justify-between gap-2 mb-2">
                             <div class="text-[13px] font-bold text-gray-800 leading-snug flex-1 flex items-center gap-1.5">
-                                ${t.name}
-                                ${t.details ? `<svg class="w-4 h-4 text-indigo-400 hover:text-indigo-600 cursor-help transition-colors" title="${t.details.replace(/"/g, '&quot;')}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>` : ''}
+                                <span>${t.name}</span>
+                                ${t.details ? `<button type="button" title="${safeDetailsForTitle}" onclick="alert('【任务备注】\\n${safeDetailsForAlert}')" class="text-indigo-400 hover:text-indigo-600 cursor-help transition-colors outline-none shrink-0"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg></button>` : ''}
                             </div>
                             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${isDue ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'} shrink-0">${isDue ? '截止' : '推进中'}</span>
                         </div>
@@ -1264,7 +1270,7 @@
                         groupedLogs[owner].push(contentStr);
                     }
                 } else {
-                    const taskName = item.querySelector('.text-\\[13px\\]').childNodes[0].textContent.trim();
+                    const taskName = item.querySelector('.text-\\[13px\\] > span').textContent.trim();
                     if (statusVal !== '推进中' || compVal || (richHtml && richHtml !== '<br>')) {
                         hasContent = true;
                         if (!groupedLogs[owner]) groupedLogs[owner] = [];
@@ -1274,6 +1280,12 @@
                             contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600">${richHtml}</div>`;
                         }
                         groupedLogs[owner].push(contentStr);
+                        
+                        if (statusVal === '已完成') {
+                            const taskId = item.getAttribute('data-taskid');
+                            const t = tasks.find(x => x.id === taskId);
+                            if (t) t.completed = true;
+                        }
                     }
                 }
             });
@@ -1292,6 +1304,7 @@
             saveData();
             renderLogs();
             renderSmartLogForm(); 
+            renderApp();
         };
         
         window.deleteLog = function(id) {
