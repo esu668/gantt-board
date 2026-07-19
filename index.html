@@ -857,11 +857,11 @@
                 dateRangeDisplay.textContent = '等待添加任务...';
                 return;
             }
-            let minDate = new Date(displayTasks[0].start);
-            let maxDate = new Date(displayTasks[0].end);
+            let minDate = new Date(displayTasks[0].start.split('-')[0], displayTasks[0].start.split('-')[1] - 1, displayTasks[0].start.split('-')[2]);
+            let maxDate = new Date(displayTasks[0].end.split('-')[0], displayTasks[0].end.split('-')[1] - 1, displayTasks[0].end.split('-')[2]);
             displayTasks.forEach(t => {
-                const s = new Date(t.start);
-                const e = new Date(t.end);
+                const s = new Date(t.start.split('-')[0], t.start.split('-')[1] - 1, t.start.split('-')[2]);
+                const e = new Date(t.end.split('-')[0], t.end.split('-')[1] - 1, t.end.split('-')[2]);
                 if (s < minDate) minDate = s;
                 if (e > maxDate) maxDate = e;
             });
@@ -886,7 +886,7 @@
                 const currentDateStr = formatDate(currentDay);
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
                 const isToday = currentDateStr === todayStr;
-                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-10' : (isWeekend ? 'bg-slate-100/70 text-gray-400' : 'bg-white text-gray-500')}`;
+                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-10' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
                 
                 if (isToday) {
                     dayHeader.style.backgroundColor = todayBgColor;
@@ -960,15 +960,16 @@
                             const bar = document.createElement('div');
                             const visibleDuration = Math.min(duration, totalDays - startIndex);
                             bar.style.width = `calc(${visibleDuration * 100}% - 8px)`;
-                            bar.className = `absolute top-1.5 bottom-1.5 left-1 rounded-lg flex items-center px-2.5 overflow-hidden text-[12px] font-medium whitespace-nowrap transition-all cursor-pointer ${task.completed ? 'task-completed-pattern grayscale' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                            bar.className = `absolute top-1.5 bottom-1.5 left-1 rounded-lg flex items-center px-2.5 overflow-hidden text-[12px] font-medium whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern grayscale' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
                             const textColor = getTextColor(task.color);
                             bar.style.backgroundColor = task.color;
                             bar.style.color = textColor;
-                            bar.style.zIndex = '10';
+                            
                             bar.onclick = (e) => {
-                                if (e.target.closest('button') || e.target.classList.contains('resize-handle')) return;
+                                if (e.target.classList.contains('resize-handle')) return;
                                 openEditModal(task.id);
                             };
+                            
                             const ownerInitial = task.owner.charAt(0).toUpperCase();
                             const displayOwner = duration === 1 ? ownerInitial : task.owner;
                             const ownerPadding = duration === 1 ? 'px-1.5' : 'px-2';
@@ -977,7 +978,7 @@
                                 ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0" style="width: ${pastPercentage}%"></div>` : ''}
                                 <span class="truncate flex-1 relative z-10 ${task.completed ? 'line-through opacity-80' : ''}" title="${task.name}">${task.name}</span>
                                 <span class="ml-1.5 ${ownerPadding} py-0.5 bg-white/40 rounded text-[10px] uppercase shrink-0 font-bold relative z-10">${displayOwner}</span>
-                                <div class="resize-handle relative z-10"></div>
+                                <div class="resize-handle"></div>
                             `;
                             const handle = bar.querySelector('.resize-handle');
                             handle.onmousedown = (e) => {
