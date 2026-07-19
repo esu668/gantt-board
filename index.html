@@ -44,6 +44,41 @@
         .breathe-btn.active { animation: soft-breathe 2s infinite cubic-bezier(0.66, 0, 0.34, 1); }
         
         .task-past-mask { background-color: rgba(0, 0, 0, 0.12); border-right: 1.5px dashed rgba(255, 255, 255, 0.7); pointer-events: none; }
+
+        /* 分离式按钮动态颜色系统 */
+        .split-btn-left {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 6%, transparent);
+            color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 80%, #4b5563);
+            border-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 15%, transparent);
+        }
+        .split-btn-left:hover {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 12%, transparent);
+        }
+        .split-btn-right {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 12%, transparent);
+            color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 80%, #4b5563);
+            border-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 15%, transparent);
+        }
+        .split-btn-right:hover {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 20%, transparent);
+        }
+        
+        .split-btn-left.active {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 15%, transparent);
+            color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 100%, #1e293b);
+            border-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 30%, transparent);
+        }
+        .split-btn-left.active:hover {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 22%, transparent);
+        }
+        .split-btn-right.active {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 25%, transparent);
+            color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 100%, #1e293b);
+            border-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 30%, transparent);
+        }
+        .split-btn-right.active:hover {
+            background-color: color-mix(in srgb, var(--log-bg-color, #4f46e5) 35%, transparent);
+        }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
@@ -65,11 +100,11 @@
             <button onclick="switchView('log')" id="btnViewLog" class="breathe-btn px-3.5 py-1.5 text-[13px] font-bold rounded-lg shadow-sm transition-all shrink-0">每日进度</button>
             
             <div class="flex items-stretch shadow-sm rounded-md shrink-0 ml-1 md:ml-3">
-                <button id="viewMainBtn" type="button" onclick="switchView(currentDropdownViewMode)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-all focus:outline-none border-r-0">
+                <button id="viewMainBtn" type="button" onclick="switchView(currentDropdownViewMode)" class="split-btn-left flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md border transition-all focus:outline-none border-r-0">
                     <span id="currentViewText">全景看板</span>
                 </button>
                 <div class="relative custom-dropdown flex">
-                    <button id="viewDropdownToggleBtn" type="button" onclick="document.getElementById('viewDropdownMenu').classList.toggle('hidden')" class="flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-indigo-100 border border-indigo-200 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-800 transition-all focus:outline-none">
+                    <button id="viewDropdownToggleBtn" type="button" onclick="document.getElementById('viewDropdownMenu').classList.toggle('hidden')" class="split-btn-right flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md border border-l transition-all focus:outline-none">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                     <div id="viewDropdownMenu" class="absolute left-auto right-0 top-full mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50 py-1.5 origin-top-right">
@@ -413,8 +448,8 @@
         }
 
         function applyLogBtnStyle() {
+            document.documentElement.style.setProperty('--log-bg-color', logBgColor);
             const btn = document.getElementById('btnViewLog');
-            btn.style.setProperty('--log-bg-color', logBgColor);
             btn.style.backgroundColor = logBgColor;
             btn.style.color = getTextColor(logBgColor);
         }
@@ -859,7 +894,8 @@
             wrapper.appendChild(corner);
 
             let currentDay = new Date(minDate);
-            const todayD = new Date(todayStr);
+            const parts = todayStr.split('-');
+            const todayD = new Date(parts[0], parts[1] - 1, parts[2]);
             for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
@@ -896,8 +932,12 @@
                         </div>
                     `;
                     wrapper.appendChild(taskLabel);
-                    const taskStart = new Date(task.start);
-                    const taskEnd = new Date(task.end);
+                    
+                    const tParts = task.start.split('-');
+                    const taskStart = new Date(tParts[0], tParts[1] - 1, tParts[2]);
+                    const eParts = task.end.split('-');
+                    const taskEnd = new Date(eParts[0], eParts[1] - 1, eParts[2]);
+                    
                     const startIndex = Math.max(0, Math.round((taskStart - minDate) / (1000 * 60 * 60 * 24)));
                     const duration = Math.round((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1;
                     currentDay = new Date(minDate);
@@ -1079,14 +1119,14 @@
                 logPage.classList.remove('hidden');
                 btnLog.classList.add('active');
                 
-                viewMainBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-white border border-gray-200 text-gray-800 hover:bg-gray-50 transition-all focus:outline-none border-r-0";
-                viewDropdownToggleBtn.className = "flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 hover:text-gray-700 transition-all focus:outline-none border-l";
+                viewMainBtn.classList.remove('active');
+                viewDropdownToggleBtn.classList.remove('active');
                 
                 renderLogs();
                 renderSmartLogForm();
             } else {
-                viewMainBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-all focus:outline-none border-r-0";
-                viewDropdownToggleBtn.className = "flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-indigo-100 border border-indigo-200 text-indigo-600 hover:bg-indigo-200 hover:text-indigo-800 transition-all focus:outline-none border-l";
+                viewMainBtn.classList.add('active');
+                viewDropdownToggleBtn.classList.add('active');
                 
                 btnLog.classList.remove('active');
 
