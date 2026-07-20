@@ -629,12 +629,12 @@
                         <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start gap-2" style="border-left: 4px solid ${t.color};">
                             <div class="flex-1 min-w-0 pl-1">
                                 <div class="text-[13px] font-bold text-gray-800 leading-normal py-[1px] break-words">${t.name}</div>
-                                <div class="flex items-center gap-2 mt-1.5">
+                               <div class="flex items-center gap-2 mt-2">
                                     <span class="text-[10px] font-medium text-gray-500">${t.category}</span>
-                                    <span class="text-[9px] text-gray-300">|</span>
+                                    <span class="w-[1px] h-3 bg-gray-300 inline-block align-middle"></span>
                                     <span class="text-[10px] text-gray-400 font-medium">${t.start.substring(5)} ~ ${t.end.substring(5)}</span>
                                 </div>
-                                ${detailsHtml}
+                                ${detailsHtml.replace('mt-2', 'mt-3').replace('p-1.5', 'p-2')}
                             </div>
                             <div class="text-[11px] font-bold text-gray-500 tracking-wider shrink-0">${t.owner}</div>
                         </div>
