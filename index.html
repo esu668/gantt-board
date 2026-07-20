@@ -347,9 +347,8 @@
         <span id="toastMsg" class="text-sm font-medium break-all"></span>
     </div>
     <script>
-        const cloudConfig = {
-            binId: '6a5a450df5f4af5e299ceb09',
-            apiKey: '$2a$10$yumOXVcT8jdqDb0eObTP1.MXJTmg.44r9Ush3QdJHgsaUh1RZyEwm'
+       const cloudConfig = {
+            binId: '6a5a450df5f4af5e299ceb09'
         };
         let ownerColors = { "ESU": "#fde047", "MIKO": "#c084fc", "公共": "#93c5fd" };
         let globalCategories = new Set(['网站与产品', '供应链与物料', '社媒与营销']); 
@@ -713,9 +712,7 @@
             status.classList.remove('hidden');
             status.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400 spinner"></span> 获取中...`;
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}/latest`, {
-                    headers: { 'X-Access-Key': cloudConfig.apiKey }
-                });
+                const response = await fetch('/api/sync');
                 const result = await response.json();
                 if (result.record) {
                     if (result.record.tasks && result.record.tasks.length > 0) tasks = result.record.tasks;
@@ -752,9 +749,9 @@
             status.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400 spinner"></span> 保存中...`;
             try {
                 enforceOwnerColors();
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}`, {
+                const response = await fetch('/api/sync', {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': cloudConfig.apiKey },
+                    headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ tasks: tasks, logs: dailyLogs })
                 });
                 if(response.ok) {
