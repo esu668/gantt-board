@@ -597,12 +597,11 @@
                 }
             });
 
-            const wrapper = document.createElement('div');
+           const wrapper = document.createElement('div');
             wrapper.style.position = 'fixed';
-            wrapper.style.left = '0';
+            wrapper.style.left = '-9999px';
             wrapper.style.top = '0';
             wrapper.style.zIndex = '-9999';
-            wrapper.style.opacity = '0';
             wrapper.className = 'w-[540px] bg-white p-5 rounded-2xl shadow-xl font-sans';
             
             let html = `
