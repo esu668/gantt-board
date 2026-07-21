@@ -765,11 +765,10 @@
                 setupCombobox('owner', ownerColors);
                 renderFilterButtons();
                 
-               renderApp();
+                renderApp();
                 renderLogs();
-                if(!document.getElementById('logPageSection').classList.contains('hidden')) {
-                    renderSmartLogForm();
-                }
+                renderSmartLogForm();
+
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
                 
                 if (autoShowSummary && !window.hasAutoShownSummary) {
@@ -863,6 +862,9 @@
                 if (new Date(s) > new Date(en)) {
                     showToast('开始日期不能晚于结束日期', 'error'); return;
                 }
+                const wasCompleted = task.completed;
+                const isNowCompleted = document.getElementById('editCompleted').checked;
+                
                 task.name = document.getElementById('editTaskName').value.trim();
                 task.details = document.getElementById('editTaskDetails').value.trim();
                 task.category = document.getElementById('editCategory').value.trim();
@@ -871,17 +873,27 @@
                 task.owner = owner;
                 task.start = s;
                 task.end = en;
-                task.completed = document.getElementById('editCompleted').checked;
+                
                 globalCategories.add(task.category);
                 if (!ownerColors[owner]) {
                     ownerColors[owner] = '#94a3b8';
                     renderFilterButtons();
                 }
-                saveData();
-                renderApp();
-                closeEditModal();
-                showToast('修改成功');
-                if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
+
+                if (!wasCompleted && isNowCompleted) {
+                    task.completed = false;
+                    saveData();
+                    renderApp();
+                    closeEditModal();
+                    toggleComplete(task.id); 
+                } else {
+                    task.completed = isNowCompleted;
+                    saveData();
+                    renderApp();
+                    closeEditModal();
+                    showToast('修改成功');
+                    renderSmartLogForm();
+                }
             }
         });
 
@@ -1090,17 +1102,6 @@
             rangeText.textContent = `${formatDate(renderMinDate)} 至 ${formatDate(maxDate)}`;
             dateRangeDisplay.appendChild(rangeText);
             
-            if (hasEarlyTasks) {
-                const toggleBtn = document.createElement('button');
-                toggleBtn.className = "ml-2 text-[11px] text-indigo-500 hover:text-indigo-600 font-bold bg-indigo-50 hover:bg-indigo-100 px-1.5 py-0.5 rounded transition-colors";
-                toggleBtn.textContent = isGanttExpanded ? '› 收起较早日期' : '‹ 展开历史日期';
-                toggleBtn.onclick = () => {
-                    isGanttExpanded = !isGanttExpanded;
-                    renderGantt();
-                };
-                dateRangeDisplay.appendChild(toggleBtn);
-            }
-            
             const totalDays = Math.round((maxDate - renderMinDate) / (1000 * 60 * 60 * 24)) + 1;
             const groupedTasks = groupBy(displayTasks, 'category');
             const wrapper = document.createElement('div');
@@ -1108,9 +1109,25 @@
             wrapper.className = 'gantt-grid min-w-max pb-4';
             
             const corner = document.createElement('div');
-            corner.className = 'gantt-corner p-3 border-b border-r border-gray-200 text-xs font-bold text-gray-500 tracking-wider flex items-end uppercase';
+            corner.className = 'gantt-corner p-3 border-b border-r border-gray-200 text-xs font-bold text-gray-500 tracking-wider flex items-end uppercase relative';
             corner.style.gridColumn = '1';
-            corner.textContent = '任务排期 (模块)';
+            corner.style.zIndex = '40';
+            corner.innerHTML = `<span>任务排期 (模块)</span>`;
+
+            if (hasEarlyTasks) {
+                const toggleBtn = document.createElement('button');
+                toggleBtn.className = "absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full shadow-md text-indigo-500 hover:text-indigo-600 flex items-center justify-center cursor-pointer z-[50] transition-transform hover:scale-110";
+                toggleBtn.innerHTML = isGanttExpanded 
+                    ? `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>` 
+                    : `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>`;
+                toggleBtn.title = isGanttExpanded ? "收起较早日期" : "展开历史日期";
+                toggleBtn.onclick = (e) => {
+                    e.stopPropagation();
+                    isGanttExpanded = !isGanttExpanded;
+                    renderGantt();
+                };
+                corner.appendChild(toggleBtn);
+            }
             wrapper.appendChild(corner);
 
             let currentDay = new Date(renderMinDate);
@@ -1430,6 +1447,10 @@
         }
 
         window.renderSmartLogForm = function() {
+            const dateInput = document.getElementById('smartLogDateInput').value;
+            if (dateInput) {
+                currentLogDate = dateInput;
+            }
             const container = document.getElementById('smartLogContainer');
             let html = '';
             const owners = Object.keys(ownerColors);
@@ -1628,9 +1649,27 @@
 
         window.confirmDeleteLog = function(id) {
             document.getElementById('delConfirmBtn').onclick = () => {
+                const log = dailyLogs.find(l => l.id === id);
+                if (log) {
+                    const entries = log.content.split('\n\n');
+                    entries.forEach(entry => {
+                        const nameMatch = entry.match(/• 【(.*?)】/);
+                        const statusMatch = entry.match(/\[(.*?)\]/);
+                        if (nameMatch && statusMatch) {
+                            const name = nameMatch[1];
+                            const status = statusMatch[1];
+                            if (status === '已完成') {
+                                const matchingTask = tasks.find(t => t.name === name && t.owner === log.owner);
+                                if (matchingTask) matchingTask.completed = false;
+                            }
+                        }
+                    });
+                }
                 dailyLogs = dailyLogs.filter(l => l.id !== id);
                 saveData();
                 renderLogs();
+                renderSmartLogForm();
+                renderApp();
                 document.getElementById('delConfirmModal').classList.add('hidden');
                 showToast('记录已永久删除');
             };
