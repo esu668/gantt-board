@@ -596,10 +596,8 @@
             });
             
             renderApp();
-            if(!document.getElementById('logPageSection').classList.contains('hidden')) {
-                renderLogs();
-                renderSmartLogForm();
-            }
+            renderLogs();
+            renderSmartLogForm();
         };
 
         window.changeLogDate = function(val) {
@@ -831,7 +829,7 @@
             document.getElementById('taskDetails').value = '';
             document.getElementById('taskName').focus();
             showToast('任务添加成功');
-            if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
+            renderSmartLogForm();
         });
 
         window.openEditModal = function(taskId) {
@@ -926,7 +924,7 @@
                         saveData();
                         renderApp();
                         showToast('日期已更新');
-                        if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
+                        renderSmartLogForm();
                     } else renderApp();
                 }
             } else renderApp();
@@ -938,7 +936,7 @@
             renderApp();
             saveData();
             showToast('任务已删除');
-            if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
+            renderSmartLogForm();
         };
 
         window.toggleComplete = function(id) {
@@ -948,7 +946,8 @@
                     task.completed = false;
                     renderApp();
                     saveData();
-                    if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
+                    renderSmartLogForm();
+                    renderLogs();
                 } else {
                     document.getElementById('quickCompleteTaskId').value = task.id;
                     document.getElementById('quickCompleteTaskName').textContent = task.name;
@@ -989,10 +988,8 @@
                 document.getElementById('quickCompleteModal').classList.add('hidden');
                 renderApp();
                 saveData();
-                if(!document.getElementById('logPageSection').classList.contains('hidden')) {
-                    renderLogs();
-                    renderSmartLogForm();
-                }
+                renderLogs();
+                renderSmartLogForm();
                 showToast('任务已完成并记录！');
             }
         };
