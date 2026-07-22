@@ -226,6 +226,69 @@
         </div>
     </div>
 
+    <div id="quickAddModal" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
+        <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl overflow-y-auto max-h-full">
+            <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">添加新排期</h3>
+            <form id="quickAddForm" class="flex flex-col gap-3.5">
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">具体任务名称</label>
+                    <input type="text" id="qaName" required placeholder="例如：设计首页 Banner..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务细节/备注 (选填)</label>
+                    <div id="qaDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="填写具体的细项，支持直接粘贴图片或链接..."></div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 relative z-[60]">
+                    <div class="relative custom-combobox">
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">模块大类</label>
+                        <div class="relative flex items-center">
+                            <input type="text" id="qaCategory" required placeholder="选择或输入新大类..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
+                            <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
+                                <svg id="qaCategoryArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                <button type="button" id="qaCategoryClearBtn" onclick="clearInput('qaCategory')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                            </div>
+                        </div>
+                        <ul id="qaCategoryDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-[70] py-1 opacity-0 scale-y-95"></ul>
+                    </div>
+                    <div class="flex gap-2">
+                        <div class="flex-1 custom-combobox relative">
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">负责人</label>
+                            <div class="relative flex items-center">
+                                <input type="text" id="qaOwner" required placeholder="选择或输入..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
+                                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
+                                    <svg id="qaOwnerArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    <button type="button" id="qaOwnerClearBtn" onclick="clearInput('qaOwner')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                                </div>
+                            </div>
+                            <ul id="qaOwnerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-[70] py-1 opacity-0 scale-y-95"></ul>
+                        </div>
+                        <div class="w-[46px] shrink-0">
+                            <label class="block text-[11px] font-bold text-gray-500 mb-1.5 text-center">颜色</label>
+                            <input type="color" id="qaColor" value="#fde047" class="w-full h-[38px] cursor-pointer bg-white border border-gray-300 p-1 rounded-xl shadow-sm">
+                        </div>
+                    </div>
+                </div>
+                <div class="grid grid-cols-2 gap-3 mt-1 relative z-30">
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">开始</label>
+                        <input type="date" id="qaStartDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">结束</label>
+                        <input type="date" id="qaEndDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
+                    </div>
+                </div>
+                <div class="flex justify-end gap-3 mt-2">
+                    <button type="button" onclick="document.getElementById('quickAddModal').classList.add('hidden')" class="px-4 py-2.5 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm transition-colors">取消</button>
+                    <button type="submit" class="flex-1 bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-md flex items-center justify-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                        添加排期
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <div id="editModal" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
         <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl overflow-y-auto max-h-full">
             <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">修改任务</h3>
@@ -438,13 +501,22 @@
             if (e.target.closest('.resize-handle') || e.target.closest('.absolute.top-1\\.5')) return;
             e.preventDefault();
             const cell = e.target.closest('[data-date]');
-            closeViewDropdown('分屏协作', 'split');
             if (cell) {
                 const date = cell.getAttribute('data-date');
-                document.getElementById('startDate').value = date;
-                document.getElementById('endDate').value = date;
+                document.getElementById('qaStartDate').value = date;
+                document.getElementById('qaEndDate').value = date;
+                
+                document.getElementById('qaName').value = '';
+                document.getElementById('qaDetails').innerHTML = '';
+                document.getElementById('qaCategory').value = '';
+                document.getElementById('qaOwner').value = '';
+                document.getElementById('qaColor').value = '#fde047';
+                toggleClearBtn('qaCategory');
+                toggleClearBtn('qaOwner');
+                
+                document.getElementById('quickAddModal').classList.remove('hidden');
+                setTimeout(() => document.getElementById('qaName').focus(), 100);
             }
-            document.getElementById('taskName').focus();
         });
 
         document.addEventListener('click', (e) => {
@@ -586,6 +658,8 @@
             saveData();
             setupCombobox('category', globalCategories);
             setupCombobox('owner', ownerColors);
+            setupCombobox('qaCategory', globalCategories);
+            setupCombobox('qaOwner', ownerColors);
             renderFilterButtons();
             
             if(currentOwnerFilter !== 'all' && !ownerColors[currentOwnerFilter]) currentOwnerFilter = 'all';
@@ -771,11 +845,13 @@
                 enforceOwnerColors(); 
                 tasks.forEach(t => { if(t.category) globalCategories.add(t.category); });
                 setupCombobox('category', globalCategories);
+                setupCombobox('qaCategory', globalCategories);
                 
                 let existingOwners = new Set();
                 tasks.forEach(t => { if(t.owner) existingOwners.add(t.owner); });
                 existingOwners.forEach(o => { if(!ownerColors[o]) ownerColors[o] = '#94a3b8'; });
                 setupCombobox('owner', ownerColors);
+                setupCombobox('qaOwner', ownerColors);
                 renderFilterButtons();
                 
                 renderApp();
@@ -840,12 +916,46 @@
             }
             setupCombobox('category', globalCategories);
             setupCombobox('owner', ownerColors);
+            setupCombobox('qaCategory', globalCategories);
+            setupCombobox('qaOwner', ownerColors);
             renderApp();
             saveData();
             document.getElementById('taskName').value = '';
             document.getElementById('taskDetails').innerHTML = '';
             document.getElementById('taskName').focus();
             showToast('任务添加成功');
+            renderSmartLogForm();
+        });
+
+        document.getElementById('quickAddForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const taskName = document.getElementById('qaName').value.trim();
+            let taskDetails = document.getElementById('qaDetails').innerHTML.trim();
+            if(taskDetails === '<br>') taskDetails = '';
+            taskDetails = makeLinksClickable(taskDetails);
+            const category = document.getElementById('qaCategory').value.trim();
+            let owner = document.getElementById('qaOwner').value.trim();
+            if (owner === '共同') owner = '公共';
+            const color = ownerColors[owner] || document.getElementById('qaColor').value;
+            const start = document.getElementById('qaStartDate').value;
+            const end = document.getElementById('qaEndDate').value;
+            if (new Date(start) > new Date(end)) {
+                showToast('开始日期不能晚于结束日期！', 'error'); return;
+            }
+            tasks.push({ id: Date.now().toString(), name: taskName, details: taskDetails, category: category, owner: owner, color: color, start: start, end: end, completed: false });
+            globalCategories.add(category);
+            if (!ownerColors[owner]) {
+                ownerColors[owner] = color;
+                renderFilterButtons();
+            }
+            setupCombobox('category', globalCategories);
+            setupCombobox('owner', ownerColors);
+            setupCombobox('qaCategory', globalCategories);
+            setupCombobox('qaOwner', ownerColors);
+            renderApp();
+            saveData();
+            document.getElementById('quickAddModal').classList.add('hidden');
+            showToast('排期快捷添加成功');
             renderSmartLogForm();
         });
 
@@ -1332,7 +1442,8 @@
             input.value = '';
             toggleClearBtn(inputId);
             input.focus();
-            if(inputId === 'owner') { document.getElementById('taskColor').value = '#fde047'; }
+            let colorField = inputId === 'owner' ? 'taskColor' : (inputId === 'qaOwner' ? 'qaColor' : null);
+            if(colorField) { document.getElementById(colorField).value = '#fde047'; }
         };
 
         function setupCombobox(inputId, dataSetOrObj) {
@@ -1365,8 +1476,9 @@
                         input.value = item;
                         toggleClearBtn(inputId);
                         hideList();
-                        if(inputId === 'owner' && ownerColors[item]) {
-                            document.getElementById('taskColor').value = ownerColors[item];
+                        let colorField = inputId === 'owner' ? 'taskColor' : (inputId === 'qaOwner' ? 'qaColor' : null);
+                        if(colorField && ownerColors[item]) {
+                            document.getElementById(colorField).value = ownerColors[item];
                         }
                     };
                     list.appendChild(li);
@@ -1375,7 +1487,11 @@
             input.addEventListener('focus', showList);
             input.addEventListener('input', () => { 
                 toggleClearBtn(inputId); showList(); 
-                if(inputId === 'owner' && ownerColors[input.value.trim()]) { document.getElementById('taskColor').value = ownerColors[input.value.trim()]; }
+                let colorField = inputId === 'owner' ? 'taskColor' : (inputId === 'qaOwner' ? 'qaColor' : null);
+                let currentVal = input.value.trim();
+                if(colorField && ownerColors[currentVal]) { 
+                    document.getElementById(colorField).value = ownerColors[currentVal]; 
+                }
             });
             input.addEventListener('blur', hideList);
         }
