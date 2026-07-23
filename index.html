@@ -105,8 +105,12 @@
             </div>
         </div>
     </div>
-    <div id="taskSection" class="h-auto md:h-[380px] flex flex-col md:flex-row gap-5 md:gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
-        <div class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
+    <div id="taskSection" class="h-auto md:h-[380px] flex flex-col md:flex-row gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
+        <div class="w-full md:hidden flex items-stretch shadow-sm rounded-md shrink-0" id="mobTaskNav">
+            <button onclick="switchMobileTask('form')" id="mobBtnTaskForm" class="flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">添加排期</button>
+            <button onclick="switchMobileTask('pool')" id="mobBtnTaskPool" class="flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">任务管理池</button>
+        </div>
+        <div id="mobTaskFormPanel" class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">添加新任务</h3>
             </div>
@@ -167,7 +171,7 @@
                 </form>
             </div>
         </div>
-        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden md:max-h-none">
+        <div id="mobTaskPoolPanel" class="hidden md:flex flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex-col overflow-hidden md:max-h-none">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">任务管理池</h3>
                 <span class="text-xs bg-white border border-gray-200 px-2.5 py-1 rounded-md text-gray-500 font-medium shadow-sm" id="taskCountBadge">共 0 项</span>
@@ -1569,6 +1573,29 @@
                 
                 btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
                 btnHistory.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
+            }
+        };
+
+        window.switchMobileTask = function(type) {
+            const formPanel = document.getElementById('mobTaskFormPanel');
+            const poolPanel = document.getElementById('mobTaskPoolPanel');
+            const btnForm = document.getElementById('mobBtnTaskForm');
+            const btnPool = document.getElementById('mobBtnTaskPool');
+            
+            if (type === 'form') {
+                formPanel.classList.remove('hidden');
+                poolPanel.classList.add('hidden');
+                poolPanel.classList.remove('flex');
+                
+                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
+                btnPool.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
+            } else {
+                formPanel.classList.add('hidden');
+                poolPanel.classList.remove('hidden');
+                poolPanel.classList.add('flex');
+                
+                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
+                btnPool.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
             }
         };
 
