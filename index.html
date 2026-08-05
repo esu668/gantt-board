@@ -20,8 +20,9 @@
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .overdue-bar { animation: overdue-breathe 2s infinite cubic-bezier(0.66, 0, 0.34, 1); }
-        @keyframes overdue-breathe { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); } 70% { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
+        .overdue-flow { position: absolute; left: 0; right: 0; bottom: 0; height: 32%; pointer-events: none; overflow: hidden; border-bottom-left-radius: 6px; border-bottom-right-radius: 6px; }
+        .overdue-flow::before { content: ''; position: absolute; bottom: 0; left: 0; width: calc(200% + 96px); height: 100%; background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 48 14' preserveAspectRatio='none'%3E%3Cpath d='M0 7 Q12 1 24 7 T48 7 V14 H0 Z' fill='%23ef4444' fill-opacity='0.55'/%3E%3C/svg%3E") repeat-x bottom / 48px 100%; animation: overdue-flow-move 2.2s linear infinite; }
+        @keyframes overdue-flow-move { to { transform: translateX(-48px); } }
         button:focus, button:focus-visible, [tabindex]:focus { outline: none !important; }
         * { -webkit-tap-highlight-color: transparent; }
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
@@ -43,6 +44,17 @@
         .deadline-col { min-width: 300px; }
         .color-picker-wrap input[type="color"] { border: 0; padding: 0; width: 200%; height: 200%; cursor: pointer; transform: translate(-25%, -25%); }
         .writing-vertical { writing-mode: vertical-rl; }
+        #cdpPop { position: fixed; z-index: 300; width: 264px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08); padding: 12px; opacity: 0; transform: translateY(6px) scale(0.98); transition: opacity 0.16s ease, transform 0.16s ease; pointer-events: none; }
+        #cdpPop.cdp-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
+        .cdp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+        .cdp-day { height: 32px; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; border-radius: 10px; cursor: pointer; color: #334155; transition: background-color 0.1s ease, color 0.1s ease; }
+        .cdp-day:hover { background: #eef2ff; color: #4338ca; }
+        .cdp-day.cdp-out { color: #cbd5e1; }
+        .cdp-day.cdp-weekend { color: #94a3b8; }
+        .cdp-day.cdp-today { box-shadow: inset 0 0 0 1.5px #c7d2fe; font-weight: 700; color: #4f46e5; }
+        .cdp-day.cdp-selected { background: #4f46e5; color: #ffffff !important; font-weight: 700; box-shadow: 0 4px 10px -2px rgba(79, 70, 229, 0.5); }
+        .cdp-nav { width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; border-radius: 8px; color: #64748b; cursor: pointer; transition: background-color 0.1s ease; }
+        .cdp-nav:hover { background: #f1f5f9; color: #334155; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
@@ -1530,9 +1542,7 @@
                                 let rightElementsHtml = '';
                                 let rightElementsWidth = 0;
                                 
-                                if (!task.completed && task.end <= todayStr) {
-                                    bar.classList.add('overdue-bar');
-                                }
+                                const isOverdue = !task.completed && task.end <= todayStr;
                                 
                                 let ownerHtml = '';
                                 if (badgeMode === 'full') {
@@ -1544,6 +1554,7 @@
                                 }
 
                                 bar.innerHTML = `
+                                    ${isOverdue ? '<div class="overdue-flow"></div>' : ''}
                                     ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l'}" style="width: ${pastPercentage}%"></div>` : ''}
                                     <div class="sticky-task-content pointer-events-none overflow-hidden" style="max-width: 100%" title="${pureText}">
                                         <span class="truncate block w-full ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
@@ -1587,6 +1598,96 @@
                 }
             });
         }
+
+        const CDP = { input: null, view: null };
+        function cdpPad(n){ return String(n).padStart(2,'0'); }
+        function cdpEnsureEl(){
+            let el = document.getElementById('cdpPop');
+            if (el) return el;
+            el = document.createElement('div');
+            el.id = 'cdpPop';
+            el.addEventListener('mousedown', e => e.stopPropagation());
+            document.body.appendChild(el);
+            document.addEventListener('mousedown', e => {
+                if (CDP.input && e.target !== CDP.input) closeDatePicker();
+            });
+            window.addEventListener('resize', () => closeDatePicker());
+            document.addEventListener('keydown', e => { if (e.key === 'Escape') closeDatePicker(); });
+            return el;
+        }
+        function openDatePicker(input){
+            const el = cdpEnsureEl();
+            CDP.input = input;
+            const val = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? input.value : todayStr;
+            const p = val.split('-');
+            CDP.view = new Date(+p[0], +p[1]-1, 1);
+            renderCDP();
+            const r = input.getBoundingClientRect();
+            el.style.left = Math.max(8, Math.min(r.left, window.innerWidth - 272 - 8)) + 'px';
+            const h = 320;
+            el.style.top = (r.bottom + h > window.innerHeight - 8 && r.top - h > 8 ? r.top - h - 6 : r.bottom + 6) + 'px';
+            requestAnimationFrame(() => el.classList.add('cdp-open'));
+        }
+        function closeDatePicker(){
+            const el = document.getElementById('cdpPop');
+            if (el) el.classList.remove('cdp-open');
+            CDP.input = null;
+        }
+        function cdpPick(dateStr){
+            if (!CDP.input) return;
+            CDP.input.value = dateStr;
+            CDP.input.dispatchEvent(new Event('change', { bubbles: true }));
+            closeDatePicker();
+        }
+        function renderCDP(){
+            const el = cdpEnsureEl();
+            const y = CDP.view.getFullYear(), m = CDP.view.getMonth();
+            const selected = CDP.input && /^\d{4}-\d{2}-\d{2}$/.test(CDP.input.value) ? CDP.input.value : '';
+            let html = `
+                <div class="flex items-center justify-between px-1 pb-2">
+                    <div class="text-[14px] font-bold text-gray-800 tracking-tight">${y}年${m+1}月</div>
+                    <div class="flex items-center gap-1">
+                        <div class="cdp-nav" onmousedown="event.stopPropagation()" onclick="cdpShift(-1)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></div>
+                        <div class="cdp-nav" onmousedown="event.stopPropagation()" onclick="cdpShift(1)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+                    </div>
+                </div>
+                <div class="cdp-grid mb-1">${['一','二','三','四','五','六','日'].map((w,i)=>`<div class="h-7 flex items-center justify-center text-[11px] font-bold ${i>=5?'text-gray-300':'text-gray-400'}">${w}</div>`).join('')}</div>
+                <div class="cdp-grid">`;
+            const first = new Date(y, m, 1);
+            const lead = (first.getDay() + 6) % 7;
+            const gridStart = new Date(y, m, 1 - lead);
+            for (let i = 0; i < 42; i++) {
+                const d = new Date(gridStart);
+                d.setDate(gridStart.getDate() + i);
+                const ds = `${d.getFullYear()}-${cdpPad(d.getMonth()+1)}-${cdpPad(d.getDate())}`;
+                const out = d.getMonth() !== m;
+                const wk = d.getDay() === 0 || d.getDay() === 6;
+                const cls = ['cdp-day', out?'cdp-out':'', (!out&&wk)?'cdp-weekend':'', ds===todayStr?'cdp-today':'', ds===selected?'cdp-selected':''].filter(Boolean).join(' ');
+                html += `<div class="${cls}" onclick="cdpPick('${ds}')">${d.getDate()}</div>`;
+            }
+            html += `</div>
+                <div class="flex justify-between items-center pt-2 mt-1 border-t border-gray-100 px-1">
+                    ${CDP.input && !CDP.input.required && CDP.input.id !== 'smartLogDateInput' ? `<div class="text-[12px] font-semibold text-gray-400 hover:text-gray-600 cursor-pointer" onclick="cdpPick('')">清除</div>` : '<div></div>'}
+                    <div class="text-[12px] font-bold text-indigo-600 hover:text-indigo-700 cursor-pointer" onclick="cdpPick(todayStr)">今天</div>
+                </div>`;
+            el.innerHTML = html;
+        }
+        window.cdpShift = function(dir){ CDP.view.setMonth(CDP.view.getMonth() + dir); renderCDP(); };
+        window.cdpPick = cdpPick;
+        function enhanceDatePickers(){
+            document.querySelectorAll('input[type="date"]').forEach(inp => {
+                inp.type = 'text';
+                inp.readOnly = true;
+                inp.classList.add('cursor-pointer');
+                inp.setAttribute('placeholder', '选择日期');
+                inp.setAttribute('autocomplete', 'off');
+                inp.addEventListener('mousedown', e => {
+                    e.preventDefault();
+                    if (CDP.input === inp) { closeDatePicker(); } else { openDatePicker(inp); }
+                });
+            });
+        }
+        enhanceDatePickers();
 
         let _measureCtx = null;
         function measureBarText(text, font) {
