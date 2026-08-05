@@ -14,18 +14,19 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .gantt-grid { display: grid; grid-template-columns: repeat(var(--total-days), minmax(110px, 1fr)); }
-        .task-completed-pattern { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2) 8px, transparent 8px, transparent 16px); }
+        .task-completed-pattern { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2) 8px, transparent 8px, transparent 16px); opacity: 0.5; }
         .dropdown-menu { transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: top; }
         .spinner { animation: rotate 2s linear infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 18px; cursor: ew-resize; z-index: 30; background: linear-gradient(-90deg, rgba(0,0,0,0.08) 0%, transparent 100%); border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; display: flex; align-items: center; justify-content: center; transition: background 0.2s; }
-        .resize-handle:hover { background: linear-gradient(-90deg, rgba(0,0,0,0.18) 0%, transparent 100%); }
+        .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
+        .resize-handle:hover { background: rgba(0,0,0,0.2); }
         .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
         .rich-input a { color: #3b82f6; text-decoration: underline; }
         .history-rich-img img, .smart-log-rich img, .edit-log-rich img, .rich-input img, .task-details-rich img { max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; cursor: zoom-in; border-radius: 6px; display: inline-block; margin: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .gantt-header { position: sticky; top: 0; z-index: 25; }
+        .sticky-task-content { position: sticky; left: 8px; display: flex; align-items: center; gap: 6px; max-width: calc(100vw - 40px); z-index: 10; padding-right: 8px; }
         @media (min-width: 768px) { .gantt-col-sticky { position: sticky; left: 0; z-index: 22; } }
         @keyframes soft-breathe { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--log-bg-color, #4f46e5) 50%, transparent); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
         .breathe-btn { border: none !important; outline: none !important; }
@@ -120,8 +121,8 @@
                     </div>
                 </div>
             </div>
-            <div class="flex-1 overflow-auto relative bg-gray-50/30 select-none flex flex-col" id="ganttContainerWrapper">
-                <div id="ganttContainer" class="flex-1 relative block min-h-full"></div>
+            <div class="flex-1 overflow-auto relative select-none flex flex-col bg-gray-50" id="ganttContainerWrapper">
+                <div id="ganttContainer" class="flex-1 relative"></div>
             </div>
         </div>
     </div>
@@ -1391,60 +1392,59 @@
             const totalDays = 61;
             container.style.setProperty('--total-days', totalDays);
             
-            const wrap = document.createElement('div');
-            wrap.className = 'gantt-grid min-w-max relative z-10';
-            wrap.style.minHeight = '100%';
-            wrap.style.gridAutoRows = 'min-content';
+            const wrapWrapper = document.createElement('div');
+            wrapWrapper.className = 'relative flex-1 min-h-full';
             
-            const bgLayer = document.createElement('div');
-            bgLayer.className = 'absolute top-0 bottom-0 left-0 right-0 z-0 pointer-events-none gantt-grid';
+            const bgGrid = document.createElement('div');
+            bgGrid.className = 'absolute inset-0 gantt-grid pointer-events-none z-0';
             
-            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-            
-            let currentDay = new Date(renderMinDate);
+            let bgDay = new Date(renderMinDate);
             let todayIndex = -1;
-            
             for (let i = 0; i < totalDays; i++) {
-                const currentDateStr = formatDate(currentDay);
-                const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+                const currentDateStr = formatDate(bgDay);
+                const isWeekend = bgDay.getDay() === 0 || bgDay.getDay() === 6;
                 const isToday = currentDateStr === todayStr;
                 if(isToday) todayIndex = i;
                 
                 const colBg = document.createElement('div');
-                colBg.style.gridRow = '1 / 99999';
-                colBg.style.gridColumn = String(i + 1);
-                colBg.className = `border-r border-gray-100 ${isToday ? '' : (isWeekend ? 'bg-slate-100/60' : 'bg-white')}`;
+                colBg.className = `border-r border-gray-100 ${isWeekend && !isToday ? 'bg-slate-100/60' : 'bg-white'}`;
                 if (isToday) {
                     colBg.style.backgroundColor = todayBgColor;
                     colBg.style.borderLeft = '1px solid rgba(79, 70, 229, 0.15)';
                     colBg.style.borderRight = '1px solid rgba(79, 70, 229, 0.15)';
                 }
-                bgLayer.appendChild(colBg);
-                
+                bgGrid.appendChild(colBg);
+                bgDay.setDate(bgDay.getDate() + 1);
+            }
+            wrapWrapper.appendChild(bgGrid);
+
+            const wrap = document.createElement('div');
+            wrap.className = 'gantt-grid min-w-max pb-4 relative z-10';
+            
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            
+            let headerDay = new Date(renderMinDate);
+            for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
-                const dayStr = weekDays[currentDay.getDay()];
+                const currentDateStr = formatDate(headerDay);
+                const isWeekend = headerDay.getDay() === 0 || headerDay.getDay() === 6;
+                const dayStr = weekDays[headerDay.getDay()];
+                const isToday = currentDateStr === todayStr;
                 
-                dayHeader.style.gridRow = '1';
-                dayHeader.style.gridColumn = String(i + 1);
-                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[13px] flex flex-col justify-end transition-colors ${isToday ? 'z-30 shadow-sm' : 'z-20 text-gray-500'}`;
-                dayHeader.style.backgroundColor = isToday ? todayBgColor : (isWeekend ? '#f1f5f9' : '#ffffff');
+                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[13px] flex flex-col justify-end transition-colors z-20 ${isToday ? 'shadow-sm z-30' : 'text-gray-500'}`;
+                dayHeader.style.backgroundColor = isToday ? todayBgColor : (isWeekend ? '#f8fafc' : '#ffffff');
                 dayHeader.setAttribute('data-date', currentDateStr);
 
                 const dText = document.createElement('span');
                 dText.className = 'font-semibold pointer-events-none relative';
-                dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日 ${dayStr}`;
+                dText.textContent = `${headerDay.getMonth() + 1}月${headerDay.getDate()}日 ${dayStr}`;
                 if (isToday) {
                     dText.innerHTML += `<div class="absolute -top-[14px] left-1/2 -translate-x-1/2 w-5 h-[3px] bg-indigo-500 rounded-b-sm"></div>`;
                 }
                 dayHeader.appendChild(dText);
                 wrap.appendChild(dayHeader);
-                
-                currentDay.setDate(currentDay.getDate() + 1);
+                headerDay.setDate(headerDay.getDate() + 1);
             }
-            
-            wrap.appendChild(bgLayer);
-            
-            let currentRowIndex = 2;
             
             if (activeTasks.length > 0) {
                 const grouped = groupBy(activeTasks, 'owner');
@@ -1454,12 +1454,10 @@
                     if(!grouped[owner]) return;
                     
                     const catRowTrack = document.createElement('div');
-                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-20 py-1.5';
-                    catRowTrack.style.gridRow = String(currentRowIndex);
+                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-10 py-1.5';
                     catRowTrack.style.gridColumn = '1 / -1';
                     catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
                     wrap.appendChild(catRowTrack);
-                    currentRowIndex++;
 
                     grouped[owner].sort((a,b) => taskSorter(a, b)).forEach(task => {
                         const tParts = task.start.split('-');
@@ -1491,89 +1489,81 @@
                             }
                         }
 
-                        const rowLine = document.createElement('div');
-                        rowLine.style.gridRow = String(currentRowIndex);
-                        rowLine.style.gridColumn = '1 / -1';
-                        rowLine.className = 'border-b border-gray-100 pointer-events-none z-0 h-[42px]';
-                        wrap.appendChild(rowLine);
-
-                        if (renderedVisibleDuration > 0) {
+                        let currentDay = new Date(renderMinDate);
+                        for (let i = 0; i < totalDays; i++) {
                             const cell = document.createElement('div');
-                            cell.style.gridRow = String(currentRowIndex);
-                            cell.style.gridColumn = `${startIndex + 1} / span ${renderedVisibleDuration}`;
-                            cell.className = 'relative h-[42px] z-10 bg-transparent';
+                            const currentDateStr = formatDate(currentDay);
+                            cell.className = `border-b border-r border-gray-100 relative h-[42px] z-0 bg-transparent`;
+                            cell.setAttribute('data-date', currentDateStr);
                             
-                            const bar = document.createElement('div');
-                            bar.className = `absolute top-1.5 bottom-1.5 left-0.5 right-0.5 rounded-md flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 overflow-hidden shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
-                            
-                            if(hiddenDays > 0) {
-                                bar.classList.remove('rounded-md');
-                                bar.classList.add('rounded-r-md');
-                                bar.style.borderLeft = '2px dashed rgba(255,255,255,0.6)';
-                            }
-                            const textColor = getTextColor(task.color);
-                            bar.style.backgroundColor = task.color;
-                            bar.style.color = textColor;
-                            
-                            bar.onclick = (e) => {
-                                if (e.target.closest('.resize-handle')) return;
-                                openEditModal(task.id);
-                            };
-                            
-                            let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
-                            
-                            let rightElementsHtml = '';
-                            let rightElementsWidth = 0;
-                            if (!task.completed && task.end <= todayStr) {
-                                rightElementsHtml += `<svg class="w-[14px] h-[14px] text-red-500 drop-shadow-sm alert-pulse shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>`;
-                                rightElementsWidth += 18;
-                            }
-                            if (renderedVisibleDuration >= 2) {
-                                rightElementsHtml += `<div class="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-black/10 truncate max-w-[60px] shrink-0" style="color: ${textColor}">${task.owner}</div>`;
-                                rightElementsWidth += 35;
-                            }
-                            
-                            let stickyHtml = `
-                                <div class="sticky left-[8px] flex items-center h-full z-10 pointer-events-none min-w-0" style="max-width: calc(100% - ${rightElementsWidth + 24}px);">
-                                    <span class="truncate drop-shadow-sm block w-full ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
-                                </div>
-                            `;
+                            if (i === startIndex && visibleDuration > 0) {
+                                const bar = document.createElement('div');
+                                bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
+                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                
+                                if(hiddenDays > 0) {
+                                    bar.classList.remove('rounded');
+                                    bar.style.borderTopRightRadius = '0.25rem';
+                                    bar.style.borderBottomRightRadius = '0.25rem';
+                                    bar.style.borderLeft = '2px dashed rgba(255,255,255,0.6)';
+                                }
+                                const textColor = getTextColor(task.color);
+                                bar.style.backgroundColor = task.color;
+                                bar.style.color = textColor;
+                                
+                                bar.onclick = (e) => {
+                                    if (e.target.closest('.resize-handle')) return;
+                                    openEditModal(task.id);
+                                };
+                                
+                                let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
+                                
+                                let rightElementsHtml = '';
+                                let rightElementsWidth = 0;
+                                
+                                if (!task.completed && task.end <= todayStr) {
+                                    rightElementsHtml += `<svg class="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-red-500 alert-pulse drop-shadow-md z-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>`;
+                                }
+                                
+                                let ownerHtml = '';
+                                if (renderedVisibleDuration >= 2) {
+                                    ownerHtml = `<div class="absolute right-[22px] top-1/2 -translate-y-1/2 text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-black/10 truncate max-w-[50px] pointer-events-none" style="color: ${textColor}">${task.owner}</div>`;
+                                    rightElementsWidth += 45;
+                                }
 
-                            bar.innerHTML = `
-                                ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l-md'}" style="width: ${pastPercentage}%"></div>` : ''}
-                                ${stickyHtml}
-                                <div class="absolute right-[18px] top-0 bottom-0 flex items-center gap-1.5 z-20 pointer-events-none pl-1">
+                                bar.innerHTML = `
+                                    ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l'}" style="width: ${pastPercentage}%"></div>` : ''}
+                                    <div class="sticky-task-content pointer-events-none min-w-0 overflow-hidden flex-1 ${renderedVisibleDuration >= 2 ? 'pr-[80px]' : 'pr-6'}" title="${pureText}">
+                                        <span class="truncate block drop-shadow-sm w-full ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
+                                    </div>
+                                    ${ownerHtml}
                                     ${rightElementsHtml}
-                                </div>
-                                <div class="resize-handle rounded-r-md">
-                                    <div class="w-0.5 h-3 bg-black/10 rounded-full"></div>
-                                    <div class="w-0.5 h-3 bg-black/10 rounded-full ml-0.5"></div>
-                                </div>
-                            `;
-                            
-                            const handle = bar.querySelector('.resize-handle');
-                            handle.onmousedown = (e) => {
-                                e.stopPropagation();
-                                let oneDayWidth = cell.offsetWidth / renderedVisibleDuration;
-                                dragInfo = { taskId: task.id, startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: oneDayWidth, element: bar, deltaDays: 0 };
-                            };
-                            cell.appendChild(bar);
+                                    <div class="resize-handle"></div>
+                                `;
+                                
+                                const handle = bar.querySelector('.resize-handle');
+                                handle.onmousedown = (e) => {
+                                    e.stopPropagation();
+                                    dragInfo = { taskId: task.id, startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
+                                };
+                                cell.appendChild(bar);
+                            }
                             wrap.appendChild(cell);
+                            currentDay.setDate(currentDay.getDate() + 1);
                         }
-                        currentRowIndex++;
                     });
                 });
             } else {
                 const emptyRow = document.createElement('div');
-                emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm border-b border-gray-100 flex items-center justify-center z-10 relative';
-                emptyRow.style.gridRow = '2';
+                emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm border-b border-gray-100 flex items-center justify-center z-10 relative bg-transparent';
                 emptyRow.style.gridColumn = '1 / -1';
                 emptyRow.innerHTML = '暂无活跃排期，尽情享受清空任务的快乐吧！🎉';
                 wrap.appendChild(emptyRow);
             }
             
+            wrapWrapper.appendChild(wrap);
             container.innerHTML = '';
-            container.appendChild(wrap);
+            container.appendChild(wrapWrapper);
 
             requestAnimationFrame(() => {
                 if(shouldScrollToToday) {
