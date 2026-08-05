@@ -20,8 +20,8 @@
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .overdue-bar { outline: 2px solid #ef4444; outline-offset: 1px; animation: overdue-pulse 1.6s ease-in-out infinite; }
-        @keyframes overdue-pulse { 0%, 100% { outline-color: rgba(239, 68, 68, 1); } 50% { outline-color: rgba(239, 68, 68, 0.35); } }
+        .overdue-bar { animation: overdue-breathe 2s infinite cubic-bezier(0.66, 0, 0.34, 1); }
+        @keyframes overdue-breathe { 0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.55); } 70% { box-shadow: 0 0 0 7px rgba(239, 68, 68, 0); } 100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); } }
         button:focus, button:focus-visible, [tabindex]:focus { outline: none !important; }
         * { -webkit-tap-highlight-color: transparent; }
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
@@ -549,7 +549,7 @@
             const g = parseInt(h.substr(2, 2), 16);
             const b = parseInt(h.substr(4, 2), 16);
             const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            return (yiq >= 170) ? '#1e293b' : '#ffffff';
+            return (yiq >= 170) ? '#1e293b' : 'rgba(255,255,255,0.92)';
         }
 
         function applyLogBtnStyle() {
@@ -1512,9 +1512,13 @@
                                 const textColor = getTextColor(task.color);
                                 bar.style.backgroundColor = task.color;
                                 bar.style.color = textColor;
-                                const showBadge = renderedVisibleDuration >= 3;
+                                const nameW = measureBarText(task.name, '600 13px Inter, sans-serif');
+                                const ownerW = measureBarText(task.owner || '', '700 10px Inter, sans-serif') + 14;
+                                const barPx = renderedVisibleDuration * 110;
+                                const spare = barPx - 10 - nameW - 14;
+                                const badgeMode = spare >= ownerW + 10 ? 'full' : (spare >= 26 ? 'initial' : 'none');
                                 bar.style.paddingLeft = '10px';
-                                bar.style.paddingRight = showBadge ? '62px' : '30px';
+                                bar.style.paddingRight = badgeMode === 'full' ? (ownerW + 16) + 'px' : (badgeMode === 'initial' ? '28px' : '8px');
                                 
                                 bar.onclick = (e) => {
                                     if (e.target.closest('.resize-handle')) return;
@@ -1531,10 +1535,10 @@
                                 }
                                 
                                 let ownerHtml = '';
-                                if (showBadge) {
+                                if (badgeMode === 'full') {
                                     ownerHtml = `<div class="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-bold px-1.5 py-0.5 rounded-sm truncate max-w-[50px] pointer-events-none" style="background-color: rgba(0,0,0,0.12); color: ${textColor}">${task.owner}</div>`;
                                     rightElementsWidth += 45;
-                                } else {
+                                } else if (badgeMode === 'initial') {
                                     const initial = (task.owner || '').trim().charAt(0).toUpperCase();
                                     if (initial) ownerHtml = `<div class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold w-[18px] h-[18px] flex items-center justify-center rounded-full pointer-events-none" style="background-color: rgba(0,0,0,0.12); color: ${textColor}">${initial}</div>`;
                                 }
@@ -1582,6 +1586,13 @@
                     shouldScrollToToday = false;
                 }
             });
+        }
+
+        let _measureCtx = null;
+        function measureBarText(text, font) {
+            if (!_measureCtx) _measureCtx = document.createElement('canvas').getContext('2d');
+            _measureCtx.font = font;
+            return _measureCtx.measureText(text || '').width;
         }
 
         function groupBy(array, property) {
