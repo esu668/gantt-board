@@ -489,16 +489,16 @@
             if (e.target.closest('.resize-handle') || e.target.closest('button')) return;
             isDown = true;
             ganttContainer.style.cursor = 'grabbing';
-            startX = e.pageX - ganttContainer.offsetLeft;
-            scrollLeft = ganttContainer.scrollLeft;
+            startX = e.pageX - ganttContainerWrapper.offsetLeft;
+            scrollLeft = ganttContainerWrapper.scrollLeft;
         });
         ganttContainer.addEventListener('mouseleave', () => { isDown = false; ganttContainer.style.cursor = ''; });
         ganttContainer.addEventListener('mouseup', () => { isDown = false; ganttContainer.style.cursor = ''; });
         ganttContainer.addEventListener('mousemove', (e) => {
             if (!isDown) return;
             e.preventDefault();
-            const x = e.pageX - ganttContainer.offsetLeft;
-            ganttContainer.scrollLeft = scrollLeft - (x - startX) * 1.5; 
+            const x = e.pageX - ganttContainerWrapper.offsetLeft;
+            ganttContainerWrapper.scrollLeft = scrollLeft - (x - startX) * 1.5; 
         });
         
         ganttContainer.addEventListener('contextmenu', (e) => {
@@ -780,7 +780,8 @@
                         detailsHtml = `<div class="text-[12px] text-gray-500 mt-1.5 bg-gray-50/80 px-2 py-1.5 rounded break-all overflow-hidden task-details-rich">${t.details}</div>`;
                     }
                     blockHtml += `
-                        <div class="p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start gap-2" style="background: linear-gradient(90deg, ${t.color} 0px, ${t.color} 4px, #ffffff 4px);">
+                        <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start gap-2">
+                            <div style="width: 4px; border-radius: 99px; background-color: ${t.color}; align-self: stretch; flex-shrink: 0;"></div>
                             <div class="flex-1 min-w-0 pl-1">
                                 <div class="text-[14px] font-bold text-gray-800 leading-normal py-[1px] break-words">${t.name}</div>
                                 <div class="flex items-center gap-1.5 mt-1">
@@ -963,6 +964,7 @@
             if (color.length !== 7) color = '#94a3b8';
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
+            if (!start || !end) { showToast('请选择开始和结束日期', 'error'); return; }
             if (new Date(start) > new Date(end)) {
                 showToast('开始不能晚于结束！', 'error'); return;
             }
@@ -997,6 +999,7 @@
             if (color.length !== 7) color = '#94a3b8';
             const start = document.getElementById('qaStartDate').value;
             const end = document.getElementById('qaEndDate').value;
+            if (!start || !end) { showToast('请选择开始和结束日期', 'error'); return; }
             if (new Date(start) > new Date(end)) {
                 showToast('开始不能晚于结束！', 'error'); return;
             }
@@ -1039,6 +1042,7 @@
             if (task) {
                 const s = document.getElementById('editStartDate').value;
                 const en = document.getElementById('editEndDate').value;
+                if (!s || !en) { showToast('请选择开始和结束日期', 'error'); return; }
                 if (new Date(s) > new Date(en)) {
                     showToast('开始不能晚于结束', 'error'); return;
                 }
@@ -1591,8 +1595,9 @@
             requestAnimationFrame(() => {
                 if(shouldScrollToToday) {
                     const todayHeader = container.querySelector(`[data-date="${todayStr}"]`);
-                    if(todayHeader) {
-                        container.scrollLeft = todayHeader.offsetLeft - container.clientWidth / 2 + 55;
+                    const scroller = document.getElementById('ganttContainerWrapper');
+                    if(todayHeader && scroller) {
+                        scroller.scrollLeft = todayHeader.offsetLeft - scroller.clientWidth / 2 + 55;
                     }
                     shouldScrollToToday = false;
                 }
