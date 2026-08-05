@@ -35,7 +35,7 @@
         @keyframes soft-breathe { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--log-bg-color, #4f46e5) 50%, transparent); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
         .breathe-btn { border: none !important; outline: none !important; }
         .breathe-btn.active { animation: soft-breathe 2s infinite cubic-bezier(0.66, 0, 0.34, 1); }
-        .task-past-mask { background-color: rgba(15, 23, 42, 0.08); border-right: 1.5px dashed rgba(255, 255, 255, 0.8); pointer-events: none; }
+        .task-past-mask { background-color: rgba(15, 23, 42, 0.08); pointer-events: none; }
         .sortable-drag { opacity: 0.5; background: #f1f5f9; }
         .sortable-ghost { opacity: 0.2; background: #e2e8f0; border: 1px dashed #94a3b8; }
         .drag-handle { cursor: grab; }
@@ -549,7 +549,7 @@
             const g = parseInt(h.substr(2, 2), 16);
             const b = parseInt(h.substr(4, 2), 16);
             const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
-            return (yiq >= 128) ? '#1e293b' : '#ffffff';
+            return (yiq >= 170) ? '#1e293b' : '#ffffff';
         }
 
         function applyLogBtnStyle() {
@@ -759,7 +759,7 @@
                 if (items.length === 0) return '';
                 let blockHtml = `
                     <div class="mb-4 ${bgColor} border ${borderColor} rounded-xl p-3 shadow-sm">
-                        <h3 class="text-[14px] font-bold ${titleColor} mb-2.5 flex items-center gap-1.5">${emoji} ${title} <span class="text-gray-600 font-medium text-[11px] ml-1">${items.length}项</span></h3>
+                        <h3 class="text-[14px] font-bold ${titleColor} mb-2.5 flex items-center gap-1.5" style="line-height: 24px; height: 24px;"><span style="line-height: 24px;">${emoji}</span><span style="line-height: 24px;">${title}</span> <span class="text-gray-600 font-medium text-[11px] ml-1" style="line-height: 24px;">${items.length}项</span></h3>
                         <div class="flex flex-col gap-2">
                 `;
                 items.sort((a, b) => getOwnerIndex(a.owner) - getOwnerIndex(b.owner) || taskSorter(a, b)).forEach(t => {
@@ -1414,8 +1414,6 @@
                 colBg.className = `border-r border-gray-100 ${isWeekend && !isToday ? 'bg-slate-100' : 'bg-white'}`;
                 if (isToday) {
                     colBg.style.backgroundColor = todayBgColor;
-                    colBg.style.borderLeft = '1.5px solid rgba(79, 70, 229, 0.35)';
-                    colBg.style.borderRight = '1.5px solid rgba(79, 70, 229, 0.35)';
                 }
                 bgGrid.appendChild(colBg);
                 bgDay.setDate(bgDay.getDate() + 1);
@@ -1497,13 +1495,13 @@
                         for (let i = 0; i < totalDays; i++) {
                             const cell = document.createElement('div');
                             const currentDateStr = formatDate(currentDay);
-                            cell.className = `border-b border-r border-gray-100 relative h-[42px] bg-transparent`;
+                            cell.className = `border-b border-r border-gray-100 relative h-[46px] bg-transparent`;
                             cell.setAttribute('data-date', currentDateStr);
                             
                             if (i === startIndex && visibleDuration > 0) {
                                 const bar = document.createElement('div');
                                 bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
-                                bar.className = `absolute top-2 bottom-2 left-0.5 rounded flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded-md flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
                                 
                                 if(hiddenDays > 0) {
                                     bar.classList.remove('rounded');
@@ -1515,7 +1513,8 @@
                                 bar.style.backgroundColor = task.color;
                                 bar.style.color = textColor;
                                 const showBadge = renderedVisibleDuration >= 3;
-                                bar.style.paddingRight = showBadge ? '62px' : '14px';
+                                bar.style.paddingLeft = '10px';
+                                bar.style.paddingRight = showBadge ? '62px' : '30px';
                                 
                                 bar.onclick = (e) => {
                                     if (e.target.closest('.resize-handle')) return;
@@ -1532,14 +1531,17 @@
                                 }
                                 
                                 let ownerHtml = '';
-                                if (renderedVisibleDuration >= 3) {
+                                if (showBadge) {
                                     ownerHtml = `<div class="absolute right-1.5 top-1/2 -translate-y-1/2 text-[10px] font-bold px-1.5 py-0.5 rounded-sm truncate max-w-[50px] pointer-events-none" style="background-color: rgba(0,0,0,0.12); color: ${textColor}">${task.owner}</div>`;
                                     rightElementsWidth += 45;
+                                } else {
+                                    const initial = (task.owner || '').trim().charAt(0).toUpperCase();
+                                    if (initial) ownerHtml = `<div class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold w-[18px] h-[18px] flex items-center justify-center rounded-full pointer-events-none" style="background-color: rgba(0,0,0,0.12); color: ${textColor}">${initial}</div>`;
                                 }
 
                                 bar.innerHTML = `
                                     ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l'}" style="width: ${pastPercentage}%"></div>` : ''}
-                                    <div class="sticky-task-content pointer-events-none overflow-hidden" style="max-width: calc(100% - ${renderedVisibleDuration >= 3 ? 70 : 20}px)" title="${pureText}">
+                                    <div class="sticky-task-content pointer-events-none overflow-hidden" style="max-width: 100%" title="${pureText}">
                                         <span class="truncate block w-full ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
                                     </div>
                                     ${ownerHtml}
