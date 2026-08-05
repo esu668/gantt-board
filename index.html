@@ -770,8 +770,8 @@
             const renderBlock = (title, items, bgColor, borderColor, titleColor, emoji) => {
                 if (items.length === 0) return '';
                 let blockHtml = `
-                    <div class="mb-4 ${bgColor} border ${borderColor} rounded-xl p-3 shadow-sm">
-                        <h3 class="text-[14px] font-bold ${titleColor} mb-2.5 flex items-center gap-1.5" style="line-height: 28px; height: 28px;"><span style="display: inline-block; font-size: 15px; line-height: 28px;">${emoji}</span><span style="line-height: 28px;">${title}</span> <span class="text-gray-600 font-medium text-[11px] ml-1" style="line-height: 28px;">${items.length}项</span></h3>
+                    <div class="mb-2.5 ${bgColor} border ${borderColor} rounded-xl px-3 pt-2 pb-2.5 shadow-sm">
+                        <h3 class="text-[14px] font-bold ${titleColor} mb-1.5 flex items-center gap-1.5" style="line-height: 22px; height: 22px;"><span style="display: inline-block; font-size: 14px; line-height: 22px;">${emoji}</span><span style="line-height: 22px;">${title}</span> <span class="text-gray-600 font-medium text-[11px] ml-1" style="line-height: 22px;">${items.length}项</span></h3>
                         <div class="flex flex-col gap-2">
                 `;
                 items.sort((a, b) => getOwnerIndex(a.owner) - getOwnerIndex(b.owner) || taskSorter(a, b)).forEach(t => {
@@ -784,9 +784,9 @@
                             <div style="width: 4px; background-color: ${t.color}; flex-shrink: 0; border-radius: 12px 0 0 12px;"></div>
                             <div class="flex-1 min-w-0 px-3 py-2.5 flex justify-between items-start gap-2">
                                 <div class="flex-1 min-w-0">
-                                    <div class="flex items-baseline gap-2 flex-wrap">
-                                        <span class="text-[14px] font-bold text-gray-800 leading-normal break-words">${t.name}</span>
-                                        <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap">${t.start.substring(5)} ~ ${t.end.substring(5)}</span>
+                                    <div class="flex items-center gap-2 flex-wrap">
+                                        <span class="text-[14px] font-bold text-gray-800 break-words" style="line-height: 20px;">${t.name}</span>
+                                        <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap" style="line-height: 20px; padding-top: 2px;">${t.start.substring(5)} ~ ${t.end.substring(5)}</span>
                                     </div>
                                     ${detailsHtml}
                                 </div>
