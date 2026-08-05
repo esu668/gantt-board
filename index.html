@@ -715,26 +715,33 @@
                     headers: { 'X-Access-Key': cloudConfig.apiKey }
                 });
                 const result = await response.json();
+                
+                if (!response.ok) {
+                    throw new Error(result.message || 'API Request Failed');
+                }
+
                 if (result.record) {
                     if (result.record.tasks && result.record.tasks.length > 0) tasks = result.record.tasks;
                     else tasks = initialExtractedData;
                     if (result.record.logs) dailyLogs = result.record.logs;
                     if (result.record.ownersOrder) ownersOrder = result.record.ownersOrder;
                     if (result.record.ownerColors) Object.assign(ownerColors, result.record.ownerColors);
+                    
+                    ensureOwnersExist();
+                    buildDynamicFilters();
+                    renderApp();
+                    renderLogs();
+                    if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                        renderSmartLogForm();
+                    }
+                    status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
                 } else {
                     tasks = initialExtractedData;
-                    pushDataToCloud(); 
+                    await pushDataToCloud(); 
                 }
-                ensureOwnersExist();
-                buildDynamicFilters();
-                renderApp();
-                renderLogs();
-                if(!document.getElementById('logPageSection').classList.contains('hidden')) {
-                    renderSmartLogForm();
-                }
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
             } catch (error) {
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> 拉取失败`;
+                showToast('数据获取失败，请稍后再试', 'error');
             }
         }
 
@@ -751,9 +758,12 @@
                 });
                 if(response.ok) {
                     status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
-                } else throw new Error("API Error");
+                } else {
+                    throw new Error("API Error");
+                }
             } catch (error) {
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> 保存失败`;
+                showToast('数据保存失败，由于网络等原因被拦截', 'error');
             }
         }
 
