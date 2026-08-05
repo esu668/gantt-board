@@ -26,7 +26,7 @@
         .rich-input a { color: #3b82f6; text-decoration: underline; }
         .history-rich-img img, .smart-log-rich img, .edit-log-rich img, .rich-input img, .task-details-rich img { max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; cursor: zoom-in; border-radius: 6px; display: inline-block; margin: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .gantt-header { position: sticky; top: 0; z-index: 25; }
-        .sticky-task-content { position: sticky; left: 8px; display: flex; items-center; gap: 4px; max-width: calc(100vw - 40px); z-index: 10; padding-right: 8px; }
+        .sticky-task-content { position: sticky; left: 8px; display: flex; align-items: center; gap: 4px; max-width: calc(100vw - 40px); z-index: 10; padding-right: 8px; }
         @media (min-width: 768px) {
             .gantt-col-sticky { position: sticky; left: 0; z-index: 22; }
         }
@@ -43,6 +43,7 @@
         .drag-handle { cursor: grab; }
         .drag-handle:active { cursor: grabbing; }
         .deadline-col { min-width: 280px; }
+        .color-picker-wrap input[type="color"] { border: 0; padding: 0; width: 200%; height: 200%; cursor: pointer; transform: translate(-25%, -25%); }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
@@ -106,18 +107,23 @@
                     全局排期看板
                 </h2>
                 <div class="flex items-center gap-3">
-                    <button id="ganttToggleEarly" class="hidden text-xs font-bold text-indigo-500 hover:text-indigo-700 bg-indigo-50 hover:bg-indigo-100 px-2.5 py-1 rounded transition-colors" onclick="toggleGanttEarly()"></button>
-                    <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 flex items-center">等待添加...</div>
+                    <div id="ganttNavControls" class="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-0.5">
+                        <button type="button" onclick="shiftGantt(-7)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">&lt; 往前7天</button>
+                        <div class="w-px h-3 bg-gray-300 mx-1"></div>
+                        <button type="button" onclick="resetGantt()" class="px-3 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors">回到今天</button>
+                        <div class="w-px h-3 bg-gray-300 mx-1"></div>
+                        <button type="button" onclick="shiftGantt(7)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">往后7天 &gt;</button>
+                    </div>
                 </div>
             </div>
             <div class="flex-1 overflow-auto relative bg-gray-50/30 select-none flex flex-col" id="ganttContainerWrapper">
                 <div id="ganttContainer" class="flex-1"></div>
                 <div class="border-t border-gray-200 bg-gray-50 shrink-0 mt-auto sticky bottom-0 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
-                    <button type="button" onclick="document.getElementById('ganttCompletedWrapper').classList.toggle('hidden')" class="w-full px-4 py-2 flex items-center justify-between text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none">
+                    <button type="button" onclick="document.getElementById('ganttCompletedWrapper').classList.toggle('hidden')" class="w-full px-4 py-2.5 flex items-center justify-between text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none">
                         <span id="ganttCompletedCount">已完成项目收纳区 (0)</span>
                         <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div id="ganttCompletedWrapper" class="hidden overflow-hidden"></div>
+                    <div id="ganttCompletedWrapper" class="hidden overflow-y-auto max-h-[35vh] p-4 bg-gray-100 flex flex-col gap-2"></div>
                 </div>
             </div>
         </div>
@@ -156,11 +162,12 @@
                             </div>
                             <ul id="ownerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
                         </div>
-                        <div>
-                            <label class="block text-xs font-bold text-gray-500 mb-1.5">专属颜色</label>
-                            <div class="flex items-center gap-1.5">
-                                <div id="taskColorBox" class="relative w-[68px] h-[38px] rounded-lg shadow-sm border border-gray-200 shrink-0 overflow-hidden" style="background-color: #fde047;">
-                                    <input type="color" id="taskColorPicker" class="absolute inset-[-10px] w-[88px] h-[58px] opacity-0 cursor-pointer" value="#fde047" oninput="document.getElementById('taskColorBox').style.backgroundColor = this.value">
+                        <div class="flex flex-col">
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5">颜色配置</label>
+                            <div class="flex items-center gap-1.5 flex-1">
+                                <input type="text" id="taskColorHex" value="#fde047" class="w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase bg-gray-50 text-center" oninput="syncColorInput(this, 'taskColorPicker', 'taskColorBox')">
+                                <div id="taskColorBox" class="relative w-8 h-8 rounded-lg shadow-sm border border-gray-200 shrink-0 color-picker-wrap overflow-hidden" style="background-color: #fde047;">
+                                    <input type="color" id="taskColorPicker" class="absolute opacity-0" value="#fde047" oninput="syncColorInput(this, 'taskColorHex', 'taskColorBox')">
                                 </div>
                             </div>
                         </div>
@@ -266,11 +273,12 @@
                         </div>
                         <ul id="qaOwnerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-[70] py-1 opacity-0 scale-y-95"></ul>
                     </div>
-                    <div>
+                    <div class="flex flex-col">
                         <label class="block text-xs font-bold text-gray-500 mb-1.5">颜色</label>
-                        <div class="flex items-center gap-1.5">
-                            <div id="qaColorBox" class="relative w-[68px] h-[38px] rounded-lg shadow-sm border border-gray-200 shrink-0 overflow-hidden" style="background-color: #fde047;">
-                                <input type="color" id="qaColorPicker" class="absolute inset-[-10px] w-[88px] h-[58px] opacity-0 cursor-pointer" value="#fde047" oninput="document.getElementById('qaColorBox').style.backgroundColor = this.value">
+                        <div class="flex items-center gap-1.5 flex-1">
+                            <input type="text" id="qaColorHex" value="#fde047" class="w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase bg-gray-50 text-center" oninput="syncColorInput(this, 'qaColorPicker', 'qaColorBox')">
+                            <div id="qaColorBox" class="relative w-8 h-8 rounded-lg shadow-sm border border-gray-200 shrink-0 color-picker-wrap overflow-hidden" style="background-color: #fde047;">
+                                <input type="color" id="qaColorPicker" class="absolute opacity-0" value="#fde047" oninput="syncColorInput(this, 'qaColorHex', 'qaColorBox')">
                             </div>
                         </div>
                     </div>
@@ -372,17 +380,19 @@
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col">
                     <div class="flex justify-between items-center w-full">
                         <span class="text-sm font-semibold text-gray-700">今日高亮底色 (看板)</span>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <div id="setColTodayBgBox" class="relative w-[68px] h-8 rounded shadow-sm border border-gray-200 overflow-hidden" style="background-color: #eef2ff;">
-                                <input type="color" id="setHexTodayBg" class="absolute inset-[-10px] w-[88px] h-[58px] opacity-0 cursor-pointer" oninput="document.getElementById('setColTodayBgBox').style.backgroundColor = this.value">
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <input type="text" id="setHexTodayBg" class="w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase bg-white text-center" oninput="syncColorInput(this, 'setColTodayBgPicker', 'setColTodayBgBox')">
+                            <div id="setColTodayBgBox" class="relative w-8 h-8 rounded shadow-sm border border-gray-200 overflow-hidden color-picker-wrap" style="background-color: #eef2ff;">
+                                <input type="color" id="setColTodayBgPicker" class="absolute opacity-0" oninput="syncColorInput(this, 'setHexTodayBg', 'setColTodayBgBox')">
                             </div>
                         </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center w-full">
                         <span class="text-sm font-semibold text-gray-700">进度按钮颜色</span>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <div id="setColLogBgBox" class="relative w-[68px] h-8 rounded shadow-sm border border-gray-200 overflow-hidden" style="background-color: #4f46e5;">
-                                <input type="color" id="setHexLogBg" class="absolute inset-[-10px] w-[88px] h-[58px] opacity-0 cursor-pointer" oninput="document.getElementById('setColLogBgBox').style.backgroundColor = this.value">
+                        <div class="flex items-center gap-1.5 shrink-0">
+                            <input type="text" id="setHexLogBg" class="w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase bg-white text-center" oninput="syncColorInput(this, 'setColLogBgPicker', 'setColLogBgBox')">
+                            <div id="setColLogBgBox" class="relative w-8 h-8 rounded shadow-sm border border-gray-200 overflow-hidden color-picker-wrap" style="background-color: #4f46e5;">
+                                <input type="color" id="setColLogBgPicker" class="absolute opacity-0" oninput="syncColorInput(this, 'setHexLogBg', 'setColLogBgBox')">
                             </div>
                         </div>
                     </div>
@@ -443,13 +453,14 @@
         let dailyLogs = [];
         let currentOwnerFilter = 'all';
         let defaultLogExpand = false;
-        let isGanttExpanded = false;
         let autoShowSummary = localStorage.getItem('gantt_auto_summary') === 'true';
         let logBgColor = '#4f46e5'; 
         let todayBgColor = '#eef2ff';
         let searchQuery = '';
         let syncTimer = null;
         let sortableInstance = null;
+        let ganttShiftDays = 0;
+        let shouldScrollToToday = true;
 
         function getBeijingDateStr() {
             const bjTime = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Shanghai"}));
@@ -468,7 +479,7 @@
         const deadlineContainer = document.getElementById('deadlineContainer');
 
         ganttContainer.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.rounded-lg') || e.target.closest('.resize-handle') || e.target.closest('button')) return;
+            if (e.target.closest('.resize-handle') || e.target.closest('button')) return;
             isDown = true;
             ganttContainer.style.cursor = 'grabbing';
             startX = e.pageX - ganttContainer.offsetLeft;
@@ -495,6 +506,7 @@
                 document.getElementById('qaDetails').innerHTML = '';
                 document.getElementById('qaOwner').value = '';
                 document.getElementById('qaColorPicker').value = '#fde047';
+                document.getElementById('qaColorHex').value = '#fde047';
                 document.getElementById('qaColorBox').style.backgroundColor = '#fde047';
                 toggleClearBtn('qaOwner');
                 document.getElementById('quickAddModal').classList.remove('hidden');
@@ -519,6 +531,20 @@
             if(val.length > 0 && !val.startsWith('#')) val = '#' + val;
             return val;
         }
+
+        window.syncColorInput = function(sourceEl, targetId, bgBoxId) {
+            let val = sourceEl.value;
+            if (sourceEl.type === 'text') {
+                val = formatHexColor(val);
+                if (val.length === 7) {
+                    document.getElementById(targetId).value = val;
+                    document.getElementById(bgBoxId).style.backgroundColor = val;
+                }
+            } else {
+                document.getElementById(targetId).value = val.toUpperCase();
+                document.getElementById(bgBoxId).style.backgroundColor = val;
+            }
+        };
 
         function getTextColor(hex) {
             let h = hex.replace('#', '');
@@ -547,15 +573,17 @@
         };
 
         window.addOwnerRow = function(name='', color='#94a3b8') {
+            const idRand = Math.random().toString(36).substr(2, 5);
             const div = document.createElement('div');
-            div.className = 'flex items-center gap-2 owner-setting-row bg-white p-2 border border-gray-200 rounded-lg w-full';
+            div.className = 'flex items-center gap-1.5 owner-setting-row bg-white p-2 border border-gray-200 rounded-lg w-full';
             div.innerHTML = `
                 <div class="drag-handle text-gray-400 hover:text-gray-600 px-1 shrink-0"><svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M4 15h16v-2H4v2zm0-8v2h16V7H4z"></path></svg></div>
-                <input type="text" class="owner-name flex-1 px-3 py-1.5 border border-gray-300 rounded text-xs min-w-0" placeholder="成员名" value="${name}">
-                <div class="relative w-8 h-8 rounded shadow-sm border border-gray-200 shrink-0 overflow-hidden" style="background-color: ${color}">
-                    <input type="color" class="owner-color-picker absolute inset-[-10px] w-[50px] h-[50px] opacity-0 cursor-pointer" value="${color}" oninput="this.parentElement.style.backgroundColor = this.value">
+                <input type="text" class="owner-name flex-1 px-2.5 py-1.5 border border-gray-300 rounded-lg text-xs min-w-0" placeholder="成员名" value="${name}">
+                <input type="text" class="owner-color-hex w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase text-center bg-gray-50" value="${color}" oninput="syncColorInput(this, 'picker_${idRand}', 'box_${idRand}')">
+                <div id="box_${idRand}" class="relative w-8 h-8 rounded-lg shadow-sm border border-gray-200 shrink-0 overflow-hidden color-picker-wrap" style="background-color: ${color}">
+                    <input type="color" id="picker_${idRand}" class="owner-color-picker absolute opacity-0" value="${color}" oninput="syncColorInput(this, this.parentElement.previousElementSibling.id || (this.parentElement.previousElementSibling.id = 'hex_${idRand}'), 'box_${idRand}')">
                 </div>
-                <button type="button" onclick="this.parentElement.remove()" class="p-1.5 text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded shrink-0 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                <button type="button" onclick="this.parentElement.remove()" class="p-1.5 text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded-lg shrink-0 transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
             `;
             document.getElementById('settingsOwnerList').appendChild(div);
         };
@@ -606,9 +634,12 @@
                 dragClass: 'sortable-drag'
             });
 
-            document.getElementById('setHexTodayBg').value = todayBgColor;
+            document.getElementById('setHexTodayBg').value = todayBgColor.toUpperCase();
+            document.getElementById('setColTodayBgPicker').value = todayBgColor;
             document.getElementById('setColTodayBgBox').style.backgroundColor = todayBgColor;
-            document.getElementById('setHexLogBg').value = logBgColor;
+            
+            document.getElementById('setHexLogBg').value = logBgColor.toUpperCase();
+            document.getElementById('setColLogBgPicker').value = logBgColor;
             document.getElementById('setColLogBgBox').style.backgroundColor = logBgColor;
             
             document.getElementById('setLogExpand').checked = defaultLogExpand;
@@ -624,7 +655,7 @@
             const newOrder = [];
             document.querySelectorAll('.owner-setting-row').forEach(row => {
                 const name = row.querySelector('.owner-name').value.trim();
-                const color = formatHexColor(row.querySelector('.owner-color-picker').value);
+                const color = formatHexColor(row.querySelector('.owner-color-hex').value);
                 if(name) newOrder.push({name, color: color.length===7 ? color : '#94a3b8'});
             });
             ownerOrder = newOrder;
@@ -664,6 +695,7 @@
                     btn.classList.add(...inactiveClass);
                 }
             });
+            shouldScrollToToday = true;
             renderApp();
             renderLogs();
             renderSmartLogForm();
@@ -916,7 +948,7 @@
             let owner = document.getElementById('owner').value.trim();
             if (owner === '共同') owner = '公共';
             const map = getOwnerColorMap();
-            let color = map[owner] || formatHexColor(document.getElementById('taskColorPicker').value) || '#94a3b8';
+            let color = map[owner] || formatHexColor(document.getElementById('taskColorHex').value) || '#94a3b8';
             if (color.length !== 7) color = '#94a3b8';
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
@@ -930,6 +962,7 @@
                 setupCombobox('owner', getOwnerColorMap());
                 setupCombobox('qaOwner', getOwnerColorMap());
             }
+            shouldScrollToToday = true;
             saveDataLocal();
             scheduleCloudSync();
             renderApp();
@@ -949,7 +982,7 @@
             let owner = document.getElementById('qaOwner').value.trim();
             if (owner === '共同') owner = '公共';
             const map = getOwnerColorMap();
-            let color = map[owner] || formatHexColor(document.getElementById('qaColorPicker').value) || '#94a3b8';
+            let color = map[owner] || formatHexColor(document.getElementById('qaColorHex').value) || '#94a3b8';
             if (color.length !== 7) color = '#94a3b8';
             const start = document.getElementById('qaStartDate').value;
             const end = document.getElementById('qaEndDate').value;
@@ -1285,15 +1318,20 @@
             });
         }
 
-        window.toggleGanttEarly = function() {
-            isGanttExpanded = !isGanttExpanded;
+        window.shiftGantt = function(days) {
+            ganttShiftDays += days;
+            renderGantt();
+        };
+
+        window.resetGantt = function() {
+            ganttShiftDays = 0;
+            shouldScrollToToday = true;
             renderGantt();
         };
 
         function renderGantt() {
             const container = document.getElementById('ganttContainer');
             const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-            const toggleEarlyBtn = document.getElementById('ganttToggleEarly');
             const ganttCompletedCount = document.getElementById('ganttCompletedCount');
             const ganttCompletedWrapper = document.getElementById('ganttCompletedWrapper');
             
@@ -1308,75 +1346,49 @@
             if (activeTasks.length === 0 && completedTasks.length === 0) {
                 container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-gray-400 py-10"><svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-sm">暂无排期</p></div>`;
                 dateRangeDisplay.textContent = '等待添加任务...';
-                toggleEarlyBtn.classList.add('hidden');
                 ganttCompletedWrapper.innerHTML = '';
                 return;
             }
             
             const parts = todayStr.split('-');
             const todayDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-            const yesterdayDateObj = new Date(todayDateObj);
-            yesterdayDateObj.setDate(yesterdayDateObj.getDate() - 1);
             
-            let realMinDate = null;
-            let maxDate = null;
-            
-            filteredTasks.forEach(t => {
-                const s = new Date(t.start.split('-')[0], t.start.split('-')[1] - 1, t.start.split('-')[2]);
-                const e = new Date(t.end.split('-')[0], t.end.split('-')[1] - 1, t.end.split('-')[2]);
-                if (!realMinDate || s < realMinDate) realMinDate = s;
-                if (!maxDate || e > maxDate) maxDate = e;
-            });
-            
-            let renderMinDate = new Date(realMinDate);
-            let hasEarlyTasks = false;
-            if (realMinDate < yesterdayDateObj) {
-                hasEarlyTasks = true;
-                if (!isGanttExpanded) {
-                    renderMinDate = new Date(yesterdayDateObj);
-                }
-            }
-            
-            renderMinDate.setDate(renderMinDate.getDate() - 1);
-            maxDate.setDate(maxDate.getDate() + 3);
+            let renderMinDate = new Date(todayDateObj);
+            renderMinDate.setDate(renderMinDate.getDate() - 15 + ganttShiftDays);
+            let maxDate = new Date(renderMinDate);
+            maxDate.setDate(maxDate.getDate() + 60);
             
             dateRangeDisplay.innerHTML = `<span>${formatDate(renderMinDate)} ~ ${formatDate(maxDate)}</span>`;
             
-            if (hasEarlyTasks) {
-                toggleEarlyBtn.classList.remove('hidden');
-                toggleEarlyBtn.innerHTML = isGanttExpanded ? '收起历史' : '展开历史';
-            } else {
-                toggleEarlyBtn.classList.add('hidden');
-            }
-            
-            const totalDays = Math.round((maxDate - renderMinDate) / (1000 * 60 * 60 * 24)) + 1;
+            const totalDays = 60;
             container.style.setProperty('--total-days', totalDays);
             
-            const buildGridHTML = (taskList, isCompletedSection) => {
+            const buildGridHTML = (taskList) => {
                 if(taskList.length === 0) return '';
                 const grouped = groupBy(taskList, 'owner');
                 const wrap = document.createElement('div');
                 wrap.className = 'gantt-grid min-w-max pb-2';
                 
-                if (!isCompletedSection) {
-                    let currentDay = new Date(renderMinDate);
-                    for (let i = 0; i < totalDays; i++) {
-                        const dayHeader = document.createElement('div');
-                        const currentDateStr = formatDate(currentDay);
-                        const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
-                        const isToday = currentDateStr === todayStr;
-                        dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-10' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
-                        dayHeader.setAttribute('data-date', currentDateStr);
-                        
-                        if (isToday) dayHeader.style.backgroundColor = todayBgColor;
+                let currentDay = new Date(renderMinDate);
+                for (let i = 0; i < totalDays; i++) {
+                    const dayHeader = document.createElement('div');
+                    const currentDateStr = formatDate(currentDay);
+                    const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+                    const isToday = currentDateStr === todayStr;
+                    dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-10 shadow-sm' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
+                    dayHeader.setAttribute('data-date', currentDateStr);
+                    
+                    if (isToday) dayHeader.style.backgroundColor = todayBgColor;
 
-                        const dText = document.createElement('span');
-                        dText.className = 'font-semibold pointer-events-none';
-                        dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
-                        dayHeader.appendChild(dText);
-                        wrap.appendChild(dayHeader);
-                        currentDay.setDate(currentDay.getDate() + 1);
+                    const dText = document.createElement('span');
+                    dText.className = 'font-semibold pointer-events-none';
+                    dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
+                    if (isToday) {
+                        dText.innerHTML += `<div class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-4 h-1 bg-indigo-500 rounded-b-sm"></div>`;
                     }
+                    dayHeader.appendChild(dText);
+                    wrap.appendChild(dayHeader);
+                    currentDay.setDate(currentDay.getDate() + 1);
                 }
                 
                 const map = getOwnerColorMap();
@@ -1476,12 +1488,46 @@
             };
 
             container.innerHTML = '';
-            const activeGrid = buildGridHTML(activeTasks, false);
+            const activeGrid = buildGridHTML(activeTasks);
             if(activeGrid) container.appendChild(activeGrid);
             
             ganttCompletedWrapper.innerHTML = '';
-            const completedGrid = buildGridHTML(completedTasks, true);
-            if(completedGrid) ganttCompletedWrapper.appendChild(completedGrid);
+            if (completedTasks.length > 0) {
+                completedTasks.sort((a,b) => new Date(b.end) - new Date(a.end)).forEach(task => {
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = `group flex items-start gap-3 p-3 rounded-xl border border-gray-100 bg-white transition-all hover:border-gray-300`;
+                    const checkbox = document.createElement('input');
+                    checkbox.type = 'checkbox';
+                    checkbox.checked = true;
+                    checkbox.className = "mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 cursor-pointer accent-indigo-600 transition-all";
+                    checkbox.onchange = () => toggleComplete(task.id);
+                    const info = document.createElement('div');
+                    info.className = 'flex-1 min-w-0 cursor-pointer opacity-60 hover:opacity-100 transition-opacity';
+                    info.onclick = () => openEditModal(task.id);
+                    info.innerHTML = `
+                        <div class="text-xs font-semibold truncate line-through text-gray-500">${highlightText(task.name)}</div>
+                        <div class="text-[10px] text-gray-400 flex items-center gap-2 mt-1">
+                            <span class="flex items-center gap-1"><div class="w-1.5 h-1.5 rounded-full" style="background-color: ${task.color}"></div>${task.owner}</span>
+                            <span>${task.end.substring(5)} 完结</span>
+                        </div>
+                    `;
+                    itemDiv.appendChild(checkbox);
+                    itemDiv.appendChild(info);
+                    ganttCompletedWrapper.appendChild(itemDiv);
+                });
+            } else {
+                ganttCompletedWrapper.innerHTML = `<div class="text-center text-gray-400 text-xs py-2">无数据</div>`;
+            }
+
+            requestAnimationFrame(() => {
+                if(shouldScrollToToday) {
+                    const todayHeader = container.querySelector(`[data-date="${todayStr}"]`);
+                    if(todayHeader) {
+                        container.scrollLeft = todayHeader.offsetLeft - container.clientWidth / 2 + 55;
+                    }
+                    shouldScrollToToday = false;
+                }
+            });
         }
 
         function groupBy(array, property) {
@@ -1534,10 +1580,12 @@
             toggleClearBtn(inputId);
             input.focus();
             let colorFieldBox = inputId === 'owner' ? 'taskColorBox' : (inputId === 'qaOwner' ? 'qaColorBox' : null);
-            let colorFieldInput = inputId === 'owner' ? 'taskColorPicker' : (inputId === 'qaOwner' ? 'qaColorPicker' : null);
-            if(colorFieldInput) { 
-                document.getElementById(colorFieldInput).value = '#94a3b8';
-                updateColorPreview('#94a3b8', colorFieldBox);
+            let colorFieldPicker = inputId === 'owner' ? 'taskColorPicker' : (inputId === 'qaOwner' ? 'qaColorPicker' : null);
+            let colorFieldHex = inputId === 'owner' ? 'taskColorHex' : (inputId === 'qaOwner' ? 'qaColorHex' : null);
+            if(colorFieldHex) { 
+                document.getElementById(colorFieldHex).value = '#94a3b8';
+                document.getElementById(colorFieldPicker).value = '#94a3b8';
+                document.getElementById(colorFieldBox).style.backgroundColor = '#94a3b8';
             }
         };
 
@@ -1572,10 +1620,12 @@
                         toggleClearBtn(inputId);
                         hideList();
                         let colorFieldBox = inputId === 'owner' ? 'taskColorBox' : (inputId === 'qaOwner' ? 'qaColorBox' : null);
-                        let colorFieldInput = inputId === 'owner' ? 'taskColorPicker' : (inputId === 'qaOwner' ? 'qaColorPicker' : null);
-                        if(colorFieldInput && dataSetOrObj[item]) {
-                            document.getElementById(colorFieldInput).value = dataSetOrObj[item];
-                            updateColorPreview(dataSetOrObj[item], colorFieldBox);
+                        let colorFieldPicker = inputId === 'owner' ? 'taskColorPicker' : (inputId === 'qaOwner' ? 'qaColorPicker' : null);
+                        let colorFieldHex = inputId === 'owner' ? 'taskColorHex' : (inputId === 'qaOwner' ? 'qaColorHex' : null);
+                        if(colorFieldHex && dataSetOrObj[item]) {
+                            document.getElementById(colorFieldHex).value = dataSetOrObj[item].toUpperCase();
+                            document.getElementById(colorFieldPicker).value = dataSetOrObj[item];
+                            document.getElementById(colorFieldBox).style.backgroundColor = dataSetOrObj[item];
                         }
                     };
                     list.appendChild(li);
@@ -1585,11 +1635,13 @@
             input.addEventListener('input', () => { 
                 toggleClearBtn(inputId); showList(); 
                 let colorFieldBox = inputId === 'owner' ? 'taskColorBox' : (inputId === 'qaOwner' ? 'qaColorBox' : null);
-                let colorFieldInput = inputId === 'owner' ? 'taskColorPicker' : (inputId === 'qaOwner' ? 'qaColorPicker' : null);
+                let colorFieldPicker = inputId === 'owner' ? 'taskColorPicker' : (inputId === 'qaOwner' ? 'qaColorPicker' : null);
+                let colorFieldHex = inputId === 'owner' ? 'taskColorHex' : (inputId === 'qaOwner' ? 'qaColorHex' : null);
                 let currentVal = input.value.trim();
-                if(colorFieldInput && dataSetOrObj[currentVal]) { 
-                    document.getElementById(colorFieldInput).value = dataSetOrObj[currentVal]; 
-                    updateColorPreview(dataSetOrObj[currentVal], colorFieldBox);
+                if(colorFieldHex && dataSetOrObj[currentVal]) { 
+                    document.getElementById(colorFieldHex).value = dataSetOrObj[currentVal].toUpperCase(); 
+                    document.getElementById(colorFieldPicker).value = dataSetOrObj[currentVal]; 
+                    document.getElementById(colorFieldBox).style.backgroundColor = dataSetOrObj[currentVal];
                 }
             });
             input.addEventListener('blur', hideList);
@@ -1639,6 +1691,8 @@
                 gantt.classList.remove('hidden');
                 btnGantt.classList.remove(...inactiveClassList, 'hover:bg-gray-50');
                 btnGantt.classList.add(...activeClassList, 'hover:bg-indigo-100');
+                shouldScrollToToday = true;
+                renderGantt();
             }
         };
 
