@@ -770,7 +770,7 @@
             const renderBlock = (title, items, bgColor, borderColor, titleColor, emoji) => {
                 if (items.length === 0) return '';
                 let blockHtml = `
-                    <div class="mb-2.5 ${bgColor} border ${borderColor} rounded-xl px-3 pt-2 pb-2.5 shadow-sm">
+                    <div class="${bgColor} border ${borderColor} rounded-xl shadow-sm" style="margin-bottom: 10px; padding: 8px 12px 10px 12px;">
                         <h3 class="text-[14px] font-bold ${titleColor} mb-1.5 flex items-center gap-1.5" style="line-height: 22px; height: 22px;"><span style="display: inline-block; font-size: 14px; line-height: 22px;">${emoji}</span><span style="line-height: 22px;">${title}</span> <span class="text-gray-600 font-medium text-[11px] ml-1" style="line-height: 22px;">${items.length}项</span></h3>
                         <div class="flex flex-col gap-2">
                 `;
