@@ -771,25 +771,27 @@
                 if (items.length === 0) return '';
                 let blockHtml = `
                     <div class="mb-4 ${bgColor} border ${borderColor} rounded-xl p-3 shadow-sm">
-                        <h3 class="text-[14px] font-bold ${titleColor} mb-2.5 flex items-center gap-1.5" style="line-height: 24px; height: 24px;"><span style="line-height: 24px;">${emoji}</span><span style="line-height: 24px;">${title}</span> <span class="text-gray-600 font-medium text-[11px] ml-1" style="line-height: 24px;">${items.length}项</span></h3>
+                        <h3 class="text-[14px] font-bold ${titleColor} mb-2.5 flex items-center gap-1.5" style="line-height: 28px; height: 28px;"><span style="display: inline-block; font-size: 15px; line-height: 28px;">${emoji}</span><span style="line-height: 28px;">${title}</span> <span class="text-gray-600 font-medium text-[11px] ml-1" style="line-height: 28px;">${items.length}项</span></h3>
                         <div class="flex flex-col gap-2">
                 `;
                 items.sort((a, b) => getOwnerIndex(a.owner) - getOwnerIndex(b.owner) || taskSorter(a, b)).forEach(t => {
                     let detailsHtml = '';
                     if (t.details && t.details.trim() !== '') {
-                        detailsHtml = `<div class="text-[12px] text-gray-500 mt-1.5 bg-gray-50/80 px-2 py-1.5 rounded break-all overflow-hidden task-details-rich">${t.details}</div>`;
+                        detailsHtml = `<div class="text-[12px] text-gray-500 mt-1 bg-gray-50/80 px-2 py-1.5 rounded break-all overflow-hidden task-details-rich">${t.details}</div>`;
                     }
                     blockHtml += `
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start gap-2">
-                            <div style="width: 4px; border-radius: 99px; background-color: ${t.color}; align-self: stretch; flex-shrink: 0;"></div>
-                            <div class="flex-1 min-w-0 pl-1">
-                                <div class="text-[14px] font-bold text-gray-800 leading-normal py-[1px] break-words">${t.name}</div>
-                                <div class="flex items-center gap-1.5 mt-1">
-                                    <span class="text-[11px] text-gray-400 font-medium">${t.start.substring(5)} ~ ${t.end.substring(5)}</span>
+                        <div class="bg-white rounded-xl border border-gray-200 shadow-sm flex items-stretch overflow-hidden">
+                            <div style="width: 4px; background-color: ${t.color}; flex-shrink: 0; border-radius: 12px 0 0 12px;"></div>
+                            <div class="flex-1 min-w-0 px-3 py-2.5 flex justify-between items-start gap-2">
+                                <div class="flex-1 min-w-0">
+                                    <div class="flex items-baseline gap-2 flex-wrap">
+                                        <span class="text-[14px] font-bold text-gray-800 leading-normal break-words">${t.name}</span>
+                                        <span class="text-[11px] text-gray-400 font-medium whitespace-nowrap">${t.start.substring(5)} ~ ${t.end.substring(5)}</span>
+                                    </div>
+                                    ${detailsHtml}
                                 </div>
-                                ${detailsHtml}
+                                <div class="text-[12px] font-bold text-gray-500 tracking-wider shrink-0 mt-[2px]">${t.owner}</div>
                             </div>
-                            <div class="text-[12px] font-bold text-gray-500 tracking-wider shrink-0 mt-[2px]">${t.owner}</div>
                         </div>
                     `;
                 });
