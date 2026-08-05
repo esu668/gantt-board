@@ -1499,7 +1499,7 @@
                             if (i === startIndex && visibleDuration > 0) {
                                 const bar = document.createElement('div');
                             bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
-                            bar.className = `relative mt-1.5 h-[30px] ml-0.5 rounded flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                            bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
                             
                             if(hiddenDays > 0) {
                                 bar.classList.remove('rounded');
