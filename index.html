@@ -18,7 +18,7 @@
         .dropdown-menu { transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: top; }
         .spinner { animation: rotate 2s linear infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
-        @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.15); } }
+        @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
@@ -38,6 +38,7 @@
         .drag-handle:active { cursor: grabbing; }
         .deadline-col { min-width: 300px; }
         .color-picker-wrap input[type="color"] { border: 0; padding: 0; width: 200%; height: 200%; cursor: pointer; transform: translate(-25%, -25%); }
+        .writing-vertical { writing-mode: vertical-rl; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
@@ -63,10 +64,10 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5 w-full md:w-auto pb-1 md:pb-0">
             <div class="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
-                <button id="btnViewLog" onclick="switchView('log')" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none">每日进度</button>
-                <button id="viewGanttBtn" onclick="switchView('gantt')" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none">排期看板</button>
-                <button id="viewDeadlineBtn" onclick="switchView('deadline')" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none">节点看板</button>
-                <button id="viewPoolBtn" onclick="switchView('pool')" class="px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none">任务池</button>
+                <button id="btnViewLog" onclick="switchView('log')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">每日进度</button>
+                <button id="viewGanttBtn" onclick="switchView('gantt')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">排期看板</button>
+                <button id="viewDeadlineBtn" onclick="switchView('deadline')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">节点看板</button>
+                <button id="viewPoolBtn" onclick="switchView('pool')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">任务池</button>
             </div>
             <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0 ml-1 md:ml-3" id="filterButtonGroup"></div>
             <button onclick="generateTwoDaySummaryImage()" class="shrink-0 flex items-center gap-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm ml-1">
@@ -85,6 +86,23 @@
             <svg class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
         </div>
     </div>
+
+    <button id="completedToggleBtn" onclick="toggleCompletedDrawer()" class="fixed left-0 top-1/2 -translate-y-1/2 z-[45] bg-white border border-l-0 border-gray-200 shadow-[2px_0_10px_rgba(0,0,0,0.05)] rounded-r-xl py-3 px-1.5 flex flex-col items-center gap-1.5 hover:bg-gray-50 transition-transform">
+        <span class="writing-vertical text-[11px] font-bold text-gray-500 tracking-widest leading-none">已完成收纳</span>
+        <span id="completedBadgeFloat" class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">0</span>
+    </button>
+    <div id="completedDrawerOverlay" onclick="toggleCompletedDrawer()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-[1px] z-[55] hidden opacity-0 transition-opacity duration-300"></div>
+    <div id="completedDrawer" class="fixed left-0 top-0 bottom-0 w-[300px] bg-[#f8fafc] shadow-2xl z-[60] transform -translate-x-full transition-transform duration-300 border-r border-gray-200 flex flex-col">
+        <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm relative z-10 shrink-0">
+            <h3 class="font-bold text-gray-800 flex items-center gap-2">
+                <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                已完成项目
+            </h3>
+            <button onclick="toggleCompletedDrawer()" class="text-gray-400 hover:text-gray-600 p-1 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+        </div>
+        <div id="completedDrawerList" class="flex-1 overflow-y-auto p-4 flex flex-col gap-2.5"></div>
+    </div>
+
     <div id="ganttSection" class="flex-1 flex flex-col p-2 md:p-4 pb-2 min-h-0 transition-all duration-300">
         <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative">
             <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-40">
@@ -95,23 +113,16 @@
                 <div class="flex items-center gap-3">
                     <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 hidden md:flex items-center">等待添加...</div>
                     <div id="ganttNavControls" class="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-                        <button type="button" onclick="shiftGantt(-7)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">&lt; 往前7天</button>
+                        <button type="button" onclick="shiftGantt(-15)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">&lt; 往前15天</button>
                         <div class="w-px h-3 bg-gray-300 mx-1"></div>
                         <button type="button" onclick="resetGantt()" class="px-3 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors">回到今天</button>
                         <div class="w-px h-3 bg-gray-300 mx-1"></div>
-                        <button type="button" onclick="shiftGantt(7)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">往后7天 &gt;</button>
+                        <button type="button" onclick="shiftGantt(15)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">往后15天 &gt;</button>
                     </div>
                 </div>
             </div>
             <div class="flex-1 overflow-auto relative bg-gray-50/30 select-none flex flex-col" id="ganttContainerWrapper">
-                <div id="ganttContainer" class="flex-1"></div>
-                <div class="border-t border-gray-200 bg-gray-50 shrink-0 mt-auto sticky bottom-0 z-30 shadow-[0_-2px_10px_rgba(0,0,0,0.02)]">
-                    <button type="button" onclick="document.getElementById('ganttCompletedWrapper').classList.toggle('hidden')" class="w-full px-4 py-2.5 flex items-center justify-between text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none">
-                        <span id="ganttCompletedCount">已完成项目收纳区 (0)</span>
-                        <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                    </button>
-                    <div id="ganttCompletedWrapper" class="hidden overflow-y-auto max-h-[35vh] p-4 bg-gray-100 flex flex-col gap-2"></div>
-                </div>
+                <div id="ganttContainer" class="flex-1 relative"></div>
             </div>
         </div>
     </div>
@@ -178,17 +189,10 @@
         </div>
         <div id="mobTaskPoolPanel" class="hidden md:flex flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex-col overflow-hidden relative">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
-                <h3 class="font-semibold text-gray-700 text-sm">任务池 (人员优先排序)</h3>
+                <h3 class="font-semibold text-gray-700 text-sm">活跃任务池 (人员优先排序)</h3>
                 <span class="text-xs bg-white border border-gray-200 px-2.5 py-1 rounded-md text-gray-500 font-medium shadow-sm" id="taskCountBadge">共 0 项</span>
             </div>
             <div class="flex-1 overflow-y-auto p-4 flex flex-col gap-2" id="taskPoolContainer"></div>
-            <div class="border-t border-gray-200 bg-gray-50 shrink-0 mt-auto">
-                <button type="button" onclick="document.getElementById('completedTasksContainer').classList.toggle('hidden')" class="w-full px-4 py-2 flex items-center justify-between text-xs font-bold text-gray-500 hover:bg-gray-100 transition-colors focus:outline-none">
-                    <span id="completedCountText">已完成的任务 (0)</span>
-                    <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                </button>
-                <div id="completedTasksContainer" class="hidden p-4 max-h-[30vh] overflow-y-auto bg-gray-100 flex flex-col gap-2"></div>
-            </div>
         </div>
     </div>
     <div id="logPageSection" class="flex-1 flex flex-col md:flex-row gap-4 p-2 md:p-4 pb-2 min-h-0 transition-all duration-300 hidden bg-[#f8fafc]">
@@ -594,12 +598,12 @@
 
         function renderFilterButtons() {
             const container = document.getElementById('filterButtonGroup');
-            container.innerHTML = `<button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>`;
+            container.innerHTML = `<button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all focus:outline-none">全员视角</button>`;
             ownerOrder.forEach(owner => {
                 const btn = document.createElement('button');
                 btn.onclick = () => filterByOwner(owner.name);
                 btn.id = 'btnFilter' + owner.name.replace(/\s+/g, '');
-                btn.className = 'px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all';
+                btn.className = 'px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none';
                 btn.textContent = owner.name;
                 container.appendChild(btn);
             });
@@ -675,11 +679,11 @@
             const inactiveClass = ['text-gray-500', 'bg-transparent', 'shadow-none'];
             const btns = document.getElementById('filterButtonGroup').querySelectorAll('button');
             btns.forEach(btn => {
-                btn.classList.remove(...activeClass, ...inactiveClass);
+                btn.classList.remove(...activeClass, ...inactiveClass, 'hover:bg-gray-200/50', 'hover:text-gray-700');
                 if (btn.id === 'btnFilter' + owner.replace(/\s+/g, '') || (owner==='all' && btn.id==='btnFilterAll')) {
                     btn.classList.add(...activeClass);
                 } else {
-                    btn.classList.add(...inactiveClass);
+                    btn.classList.add(...inactiveClass, 'hover:bg-gray-200/50', 'hover:text-gray-700');
                 }
             });
             shouldScrollToToday = true;
@@ -987,7 +991,6 @@
                 setupCombobox('owner', getOwnerColorMap());
                 setupCombobox('qaOwner', getOwnerColorMap());
             }
-            shouldScrollToToday = true;
             saveDataLocal();
             scheduleCloudSync();
             renderApp();
@@ -1167,26 +1170,73 @@
         function renderApp() {
             document.getElementById('startDate').value = todayStr;
             document.getElementById('endDate').value = todayStr;
+            renderCompletedDrawer();
             renderTaskPool();
             renderGantt();
             renderDeadlineBoard();
         }
 
+        window.toggleCompletedDrawer = function() {
+            const drawer = document.getElementById('completedDrawer');
+            const overlay = document.getElementById('completedDrawerOverlay');
+            const btn = document.getElementById('completedToggleBtn');
+            
+            if (drawer.classList.contains('-translate-x-full')) {
+                drawer.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+                setTimeout(() => overlay.classList.remove('opacity-0'), 10);
+                btn.style.transform = 'translate(-100%, -50%)';
+            } else {
+                drawer.classList.add('-translate-x-full');
+                overlay.classList.add('opacity-0');
+                setTimeout(() => overlay.classList.add('hidden'), 300);
+                btn.style.transform = 'translate(0, -50%)';
+            }
+        };
+
+        function renderCompletedDrawer() {
+            const list = document.getElementById('completedDrawerList');
+            const badgeFloat = document.getElementById('completedBadgeFloat');
+            
+            const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
+            const completedTasks = displayTasks.filter(matchSearch).filter(t => t.completed);
+            
+            badgeFloat.textContent = completedTasks.length;
+            
+            list.innerHTML = '';
+            if (completedTasks.length === 0) {
+                list.innerHTML = `<div class="text-center text-gray-400 text-sm py-10">暂无已收纳的完成项</div>`;
+                return;
+            }
+            
+            completedTasks.sort((a,b) => new Date(b.end) - new Date(a.end)).forEach(task => {
+                const item = document.createElement('div');
+                item.className = 'bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 transition-all cursor-pointer opacity-70 hover:opacity-100 flex flex-col gap-2 shrink-0';
+                item.onclick = (e) => { if(e.target.type !== 'checkbox') openEditModal(task.id); };
+                item.innerHTML = `
+                    <div class="flex items-start gap-2 min-w-0">
+                        <input type="checkbox" checked class="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 shrink-0" onchange="toggleComplete('${task.id}')">
+                        <div class="text-[13px] font-bold text-gray-500 line-through break-words w-full leading-snug">${highlightText(task.name)}</div>
+                    </div>
+                    <div class="flex items-center justify-between pl-6 mt-1">
+                        <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"><div class="w-1.5 h-1.5 rounded-full" style="background-color:${task.color}"></div>${task.owner}</span>
+                        <span class="text-[10px] font-medium text-gray-400 shrink-0">${task.end.substring(5)} 完结</span>
+                    </div>
+                `;
+                list.appendChild(item);
+            });
+        }
+
         function renderTaskPool() {
             const poolActive = document.getElementById('taskPoolContainer');
-            const poolCompleted = document.getElementById('completedTasksContainer');
             
             const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             const filteredTasks = displayTasks.filter(matchSearch);
-            
             const activeTasks = filteredTasks.filter(t => !t.completed);
-            const completedTasks = filteredTasks.filter(t => t.completed);
             
             document.getElementById('taskCountBadge').textContent = `活跃: ${activeTasks.length}`;
-            document.getElementById('completedCountText').textContent = `已完成的任务 (${completedTasks.length})`;
             
             poolActive.innerHTML = '';
-            poolCompleted.innerHTML = '';
             
             if (activeTasks.length === 0) {
                 poolActive.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-gray-400 text-sm py-10">无活跃任务</div>`;
@@ -1195,23 +1245,15 @@
                     poolActive.appendChild(createPoolItem(task));
                 });
             }
-            
-            if (completedTasks.length > 0) {
-                completedTasks.sort((a, b) => new Date(b.end) - new Date(a.end)).forEach(task => {
-                    poolCompleted.appendChild(createPoolItem(task));
-                });
-            } else {
-                poolCompleted.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">暂无完成项</div>`;
-            }
         }
         
         function createPoolItem(task) {
             const itemDiv = document.createElement('div');
-            itemDiv.className = `group flex items-start gap-3 p-3.5 rounded-xl border transition-all duration-200 ${task.completed ? 'bg-gray-50/80 border-gray-100 opacity-60 grayscale' : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)]'}`;
+            itemDiv.className = `group flex items-start gap-3 p-3.5 rounded-xl border transition-all duration-200 bg-white border-gray-200 hover:border-indigo-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)] shrink-0`;
             const checkbox = document.createElement('input');
             checkbox.type = 'checkbox';
             checkbox.checked = task.completed;
-            checkbox.className = "mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 transition-all";
+            checkbox.className = "mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 transition-all shrink-0";
             checkbox.onchange = () => toggleComplete(task.id);
             const info = document.createElement('div');
             info.className = 'flex-1 min-w-0 cursor-pointer';
@@ -1224,17 +1266,20 @@
                 }
             }
             
-            let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>` : '';
+            let alertHtml = '';
+            if (!task.completed && task.end <= todayStr) {
+                alertHtml = `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>`;
+            }
             
             info.innerHTML = `
-                <div class="text-[14px] font-semibold flex items-center min-w-0 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}">
+                <div class="text-[14px] font-semibold flex items-center min-w-0 text-gray-800">
                     <span class="truncate">${highlightText(task.name)}</span>
                     ${alertHtml}
                 </div>
                 ${detailsHtml}
-                <div class="text-[12px] text-gray-500 flex items-center gap-2.5 mt-2 font-medium">
-                    <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: ${task.color}"></div> ${task.owner}</span>
-                    <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${task.start.substring(5)} → ${task.end.substring(5)}</span>
+                <div class="text-xs text-gray-500 flex items-center gap-2.5 mt-2 font-medium">
+                    <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200 shrink-0"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: ${task.color}"></div> ${task.owner}</span>
+                    <span class="flex items-center gap-1 shrink-0"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${task.start.substring(5)} → ${task.end.substring(5)}</span>
                 </div>
             `;
             const delBtn = document.createElement('button');
@@ -1273,30 +1318,30 @@
             container.innerHTML = '';
             columns.forEach(col => {
                 const colDiv = document.createElement('div');
-                colDiv.className = `deadline-col flex-1 bg-${col.color}-50/50 rounded-2xl border border-${col.color}-100 flex flex-col p-3 shadow-sm`;
+                colDiv.className = `deadline-col flex-1 bg-${col.color}-50/50 rounded-2xl border border-${col.color}-100 flex flex-col p-3 shadow-sm shrink-0`;
                 let headerClass = col.color === 'gray' ? 'text-gray-700' : `text-${col.color}-700`;
                 let innerHtml = `
                     <div class="flex justify-between items-center mb-3 px-1 border-b border-${col.color}-200/50 pb-2">
-                        <h3 class="text-base font-bold ${headerClass} flex items-center gap-1.5">${col.emoji} ${col.title}</h3>
+                        <h3 class="text-[15px] font-bold ${headerClass} flex items-center gap-1.5">${col.emoji} ${col.title}</h3>
                         <span class="bg-white text-xs font-bold text-gray-500 px-2 py-0.5 rounded shadow-sm">${col.items.length}</span>
                     </div>
                     <div class="flex flex-col gap-2 overflow-y-auto flex-1 pr-2">
                 `;
                 
                 if (col.items.length === 0) {
-                    innerHtml += `<div class="text-center py-6 text-gray-400 text-sm">暂无</div>`;
+                    innerHtml += `<div class="text-center py-6 text-gray-400 text-xs">暂无</div>`;
                 } else {
                     col.items.sort((a,b) => getOwnerIndex(a.owner) - getOwnerIndex(b.owner) || new Date(a.end) - new Date(b.end)).forEach(t => {
-                        let alertHtml = (t.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>` : '';
+                        let alertHtml = (t.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
                         innerHtml += `
-                            <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors" onclick="openEditModal('${t.id}')" style="border-left: 4px solid ${t.color}">
-                                <div class="text-[16px] font-bold text-gray-800 break-words mb-1 flex items-center min-w-0">
+                            <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors shrink-0" onclick="openEditModal('${t.id}')" style="border-left: 4px solid ${t.color}">
+                                <div class="text-[15px] font-bold text-gray-800 break-words mb-1 flex items-center min-w-0">
                                     <span class="truncate">${highlightText(t.name)}</span>
                                     ${alertHtml}
                                 </div>
                                 <div class="flex items-center justify-between mt-2.5">
-                                    <span class="text-[13px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">${t.owner}</span>
-                                    <span class="text-[13px] font-semibold text-gray-500">${t.end.substring(5)} 截止</span>
+                                    <span class="text-[11px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">${t.owner}</span>
+                                    <span class="text-[12px] font-semibold text-gray-500 shrink-0">${t.end.substring(5)} 截止</span>
                                 </div>
                             </div>
                         `;
@@ -1322,25 +1367,12 @@
         function renderGantt() {
             const container = document.getElementById('ganttContainer');
             const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-            const ganttCompletedCount = document.getElementById('ganttCompletedCount');
-            const ganttCompletedWrapper = document.getElementById('ganttCompletedWrapper');
             
             if (!dateRangeDisplay) return; 
 
             const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             const filteredTasks = displayTasks.filter(matchSearch);
-            
             const activeTasks = filteredTasks.filter(t => !t.completed);
-            const completedTasks = filteredTasks.filter(t => t.completed);
-            
-            ganttCompletedCount.textContent = `已完成项目收纳区 (${completedTasks.length})`;
-            
-            if (filteredTasks.length === 0) {
-                container.innerHTML = `<div class="h-full flex flex-col items-center justify-center text-gray-400 py-10"><svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-sm">暂无排期</p></div>`;
-                dateRangeDisplay.textContent = '等待添加任务...';
-                ganttCompletedWrapper.innerHTML = '';
-                return;
-            }
             
             const parts = todayStr.split('-');
             const todayDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
@@ -1352,8 +1384,8 @@
             });
             if (!realMinDate) realMinDate = new Date(todayDateObj);
             
-            let renderMinDate = new Date(realMinDate);
-            renderMinDate.setDate(renderMinDate.getDate() - 7 + ganttShiftDays); 
+            let renderMinDate = new Date(todayDateObj);
+            renderMinDate.setDate(renderMinDate.getDate() - 3 + ganttShiftDays); 
             let maxDate = new Date(renderMinDate);
             maxDate.setDate(maxDate.getDate() + 60); 
             
@@ -1363,7 +1395,7 @@
             container.style.setProperty('--total-days', totalDays);
             
             const wrap = document.createElement('div');
-            wrap.className = 'gantt-grid min-w-max pb-2';
+            wrap.className = 'gantt-grid min-w-max pb-4';
             
             let currentDay = new Date(renderMinDate);
             for (let i = 0; i < totalDays; i++) {
@@ -1377,10 +1409,10 @@
                 if (isToday) dayHeader.style.backgroundColor = todayBgColor;
 
                 const dText = document.createElement('span');
-                dText.className = 'font-semibold pointer-events-none';
+                dText.className = 'font-semibold pointer-events-none relative';
                 dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
                 if (isToday) {
-                    dText.innerHTML += `<div class="absolute -top-0.5 left-1/2 -translate-x-1/2 w-4 h-1 bg-indigo-500 rounded-b-sm"></div>`;
+                    dText.innerHTML += `<div class="absolute -top-[14px] left-1/2 -translate-x-1/2 w-5 h-[3px] bg-indigo-500 rounded-b-sm"></div>`;
                 }
                 dayHeader.appendChild(dText);
                 wrap.appendChild(dayHeader);
@@ -1444,7 +1476,7 @@
                                 const bar = document.createElement('div');
                                 const renderedVisibleDuration = Math.min(visibleDuration, totalDays - startIndex);
                                 bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
-                                bar.className = `absolute top-1 bottom-1 left-0.5 rounded flex items-center overflow-hidden text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern grayscale' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded flex items-center text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern grayscale' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
                                 if(hiddenDays > 0) {
                                     bar.style.borderTopLeftRadius = '0';
                                     bar.style.borderBottomLeftRadius = '0';
@@ -1460,14 +1492,14 @@
                                 };
                                 
                                 let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
-                                let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>` : '';
+                                let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-red-500 alert-pulse drop-shadow-md z-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
                                 
                                 bar.innerHTML = `
                                     ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0" style="width: ${pastPercentage}%"></div>` : ''}
                                     <div class="sticky-task-content pointer-events-none" title="${pureText}">
                                         <span class="truncate drop-shadow-sm ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
-                                        ${alertHtml}
                                     </div>
+                                    ${alertHtml}
                                     <div class="resize-handle"></div>
                                 `;
                                 const handle = bar.querySelector('.resize-handle');
@@ -1484,7 +1516,7 @@
                 });
             } else {
                 const emptyRow = document.createElement('div');
-                emptyRow.className = 'col-span-full text-center text-gray-400 py-10 text-sm bg-white/50 border-b border-gray-100 flex items-center justify-center';
+                emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm bg-white/50 border-b border-gray-100 flex items-center justify-center';
                 emptyRow.style.gridColumn = '1 / -1';
                 emptyRow.innerHTML = '暂无活跃排期，尽情享受清空任务的快乐吧！🎉';
                 wrap.appendChild(emptyRow);
@@ -1492,40 +1524,6 @@
             
             container.innerHTML = '';
             container.appendChild(wrap);
-
-            ganttCompletedWrapper.innerHTML = '';
-            if (completedTasks.length > 0) {
-                completedTasks.sort((a,b) => new Date(b.end) - new Date(a.end)).forEach(task => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = `group flex items-center justify-between gap-3 p-3 rounded-xl border border-gray-100 bg-white transition-all hover:border-gray-300 cursor-pointer opacity-80 hover:opacity-100`;
-                    itemDiv.onclick = (e) => { if(e.target.type !== 'checkbox') openEditModal(task.id); };
-                    
-                    const leftCol = document.createElement('div');
-                    leftCol.className = 'flex items-center gap-3 min-w-0';
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = true;
-                    checkbox.className = "w-4 h-4 rounded border-gray-300 text-indigo-600 cursor-pointer accent-indigo-600 transition-all shrink-0";
-                    checkbox.onchange = () => toggleComplete(task.id);
-                    
-                    leftCol.innerHTML = `
-                        <div class="text-[14px] font-semibold truncate line-through text-gray-500">${highlightText(task.name)}</div>
-                    `;
-                    leftCol.prepend(checkbox);
-                    
-                    const rightCol = document.createElement('div');
-                    rightCol.className = 'text-[12px] text-gray-400 flex items-center gap-3 shrink-0';
-                    rightCol.innerHTML = `
-                        <span class="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded"><div class="w-2 h-2 rounded-full" style="background-color: ${task.color}"></div>${task.owner}</span>
-                        <span>${task.end.substring(5)} 完结</span>
-                    `;
-                    itemDiv.appendChild(leftCol);
-                    itemDiv.appendChild(rightCol);
-                    ganttCompletedWrapper.appendChild(itemDiv);
-                });
-            } else {
-                ganttCompletedWrapper.innerHTML = `<div class="text-center text-gray-400 text-xs py-4">无已完成数据</div>`;
-            }
 
             requestAnimationFrame(() => {
                 if(shouldScrollToToday) {
@@ -1668,21 +1666,21 @@
             
             ['btnViewLog', 'viewGanttBtn', 'viewDeadlineBtn', 'viewPoolBtn'].forEach(id => {
                 const b = document.getElementById(id);
-                b.className = "px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none";
+                b.className = "px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative";
                 b.style.backgroundColor = '';
                 b.style.color = '';
             });
             
             if (mode === 'log') {
                 const b = document.getElementById('btnViewLog');
-                b.className = "px-3 py-1.5 text-xs font-bold rounded-md shadow-sm transition-all focus:outline-none breathe-btn active";
+                b.className = "px-3 py-1.5 text-[13px] font-bold rounded-md shadow-sm transition-all duration-200 focus:outline-none breathe-btn active relative z-10";
                 b.style.backgroundColor = logBgColor;
                 b.style.color = getTextColor(logBgColor);
                 logPage.classList.remove('hidden');
                 logPage.classList.add('flex');
             } else {
                 const b = document.getElementById(mode === 'gantt' ? 'viewGanttBtn' : (mode === 'deadline' ? 'viewDeadlineBtn' : 'viewPoolBtn'));
-                b.className = "px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all focus:outline-none";
+                b.className = "px-3 py-1.5 text-[13px] font-bold rounded-md bg-white shadow-sm text-indigo-600 transition-all duration-200 focus:outline-none relative z-10";
                 if (mode === 'pool') {
                     pool.classList.remove('hidden');
                     pool.classList.remove('h-auto', 'md:h-[380px]');
