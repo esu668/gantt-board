@@ -18,7 +18,7 @@
         .dropdown-menu { transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: top; }
         .spinner { animation: rotate 2s linear infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
-        @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.6; transform: scale(1.15); } }
+        @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.7; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
@@ -26,7 +26,7 @@
         .rich-input a { color: #3b82f6; text-decoration: underline; }
         .history-rich-img img, .smart-log-rich img, .edit-log-rich img, .rich-input img, .task-details-rich img { max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; cursor: zoom-in; border-radius: 6px; display: inline-block; margin: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .gantt-header { position: sticky; top: 0; z-index: 25; }
-        .sticky-task-content { position: sticky; left: 8px; display: flex; align-items: center; gap: 4px; max-width: calc(100vw - 40px); z-index: 10; padding-right: 8px; }
+        .sticky-task-content { position: sticky; left: 8px; display: flex; align-items: center; gap: 6px; max-width: calc(100vw - 40px); z-index: 10; padding-right: 8px; }
         @media (min-width: 768px) { .gantt-col-sticky { position: sticky; left: 0; z-index: 22; } }
         @keyframes soft-breathe { 0% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--log-bg-color, #4f46e5) 50%, transparent); } 70% { box-shadow: 0 0 0 6px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
         .breathe-btn { border: none !important; outline: none !important; }
@@ -36,7 +36,7 @@
         .sortable-ghost { opacity: 0.2; background: #e2e8f0; border: 1px dashed #94a3b8; }
         .drag-handle { cursor: grab; }
         .drag-handle:active { cursor: grabbing; }
-        .deadline-col { min-width: 280px; }
+        .deadline-col { min-width: 300px; }
         .color-picker-wrap input[type="color"] { border: 0; padding: 0; width: 200%; height: 200%; cursor: pointer; transform: translate(-25%, -25%); }
     </style>
 </head>
@@ -93,7 +93,8 @@
                     全局排期看板
                 </h2>
                 <div class="flex items-center gap-3">
-                    <div id="ganttNavControls" class="flex items-center bg-gray-50 border border-gray-200 rounded-lg p-0.5">
+                    <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 hidden md:flex items-center">等待添加...</div>
+                    <div id="ganttNavControls" class="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
                         <button type="button" onclick="shiftGantt(-7)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">&lt; 往前7天</button>
                         <div class="w-px h-3 bg-gray-300 mx-1"></div>
                         <button type="button" onclick="resetGantt()" class="px-3 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors">回到今天</button>
@@ -434,7 +435,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.0/Sortable.min.js"></script>
     <script>
         const cloudConfig = { binId: '6a5a450df5f4af5e299ceb09' };
-        let ownerOrder = [{name: 'ESU', color: '#fde047'}, {name: 'MIKO', color: '#c084fc'}, {name: '公共', color: '#93c5fd'}];
+        let ownerOrder = [];
         let tasks = [];
         let dailyLogs = [];
         let currentOwnerFilter = 'all';
@@ -605,6 +606,9 @@
         }
 
         window.openSettings = function() {
+            if (!ownerOrder || ownerOrder.length === 0) {
+                ownerOrder = [{name: 'ESU', color: '#fde047'}, {name: 'MIKO', color: '#c084fc'}, {name: '公共', color: '#93c5fd'}];
+            }
             document.getElementById('settingsOwnerList').innerHTML = '';
             ownerOrder.forEach(o => addOwnerRow(o.name, o.color));
             if(ownerOrder.length === 0) addOwnerRow('', '#94a3b8');
@@ -881,7 +885,7 @@
                 if (result.record) {
                     if (result.record.tasks) tasks = result.record.tasks;
                     if (result.record.logs) dailyLogs = result.record.logs;
-                    if (result.record.ownerOrder) ownerOrder = result.record.ownerOrder;
+                    if (result.record.ownerOrder && result.record.ownerOrder.length > 0) ownerOrder = result.record.ownerOrder;
                 }
                 saveDataLocal();
                 updateSyncUI('synced');
@@ -891,8 +895,12 @@
                 const localOwners = localStorage.getItem('gantt_data_owners');
                 if(localTasks) tasks = JSON.parse(localTasks);
                 if(localLogs) dailyLogs = JSON.parse(localLogs);
-                if(localOwners) ownerOrder = JSON.parse(localOwners);
+                if(localOwners && JSON.parse(localOwners).length > 0) ownerOrder = JSON.parse(localOwners);
                 updateSyncUI('pending');
+            }
+            
+            if (!ownerOrder || ownerOrder.length === 0) {
+                ownerOrder = [{name: 'ESU', color: '#fde047'}, {name: 'MIKO', color: '#c084fc'}, {name: '公共', color: '#93c5fd'}];
             }
             
             tasks.forEach(t => { if(t.category !== undefined) delete t.category; });
@@ -979,6 +987,7 @@
                 setupCombobox('owner', getOwnerColorMap());
                 setupCombobox('qaOwner', getOwnerColorMap());
             }
+            shouldScrollToToday = true;
             saveDataLocal();
             scheduleCloudSync();
             renderApp();
@@ -1174,7 +1183,7 @@
             const completedTasks = filteredTasks.filter(t => t.completed);
             
             document.getElementById('taskCountBadge').textContent = `活跃: ${activeTasks.length}`;
-            document.getElementById('completedCountText').textContent = `已完成收纳 (${completedTasks.length})`;
+            document.getElementById('completedCountText').textContent = `已完成的任务 (${completedTasks.length})`;
             
             poolActive.innerHTML = '';
             poolCompleted.innerHTML = '';
@@ -1215,10 +1224,7 @@
                 }
             }
             
-            let alertHtml = '';
-            if (!task.completed && task.end <= todayStr) {
-                alertHtml = `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>`;
-            }
+            let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>` : '';
             
             info.innerHTML = `
                 <div class="text-[14px] font-semibold flex items-center min-w-0 ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}">
@@ -1226,7 +1232,7 @@
                     ${alertHtml}
                 </div>
                 ${detailsHtml}
-                <div class="text-xs text-gray-500 flex items-center gap-2.5 mt-2 font-medium">
+                <div class="text-[12px] text-gray-500 flex items-center gap-2.5 mt-2 font-medium">
                     <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: ${task.color}"></div> ${task.owner}</span>
                     <span class="flex items-center gap-1"><svg class="w-3.5 h-3.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${task.start.substring(5)} → ${task.end.substring(5)}</span>
                 </div>
@@ -1271,26 +1277,26 @@
                 let headerClass = col.color === 'gray' ? 'text-gray-700' : `text-${col.color}-700`;
                 let innerHtml = `
                     <div class="flex justify-between items-center mb-3 px-1 border-b border-${col.color}-200/50 pb-2">
-                        <h3 class="text-[15px] font-bold ${headerClass} flex items-center gap-1.5">${col.emoji} ${col.title}</h3>
+                        <h3 class="text-base font-bold ${headerClass} flex items-center gap-1.5">${col.emoji} ${col.title}</h3>
                         <span class="bg-white text-xs font-bold text-gray-500 px-2 py-0.5 rounded shadow-sm">${col.items.length}</span>
                     </div>
                     <div class="flex flex-col gap-2 overflow-y-auto flex-1 pr-2">
                 `;
                 
                 if (col.items.length === 0) {
-                    innerHtml += `<div class="text-center py-6 text-gray-400 text-xs">暂无</div>`;
+                    innerHtml += `<div class="text-center py-6 text-gray-400 text-sm">暂无</div>`;
                 } else {
                     col.items.sort((a,b) => getOwnerIndex(a.owner) - getOwnerIndex(b.owner) || new Date(a.end) - new Date(b.end)).forEach(t => {
                         let alertHtml = (t.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" viewBox="0 0 24 24" fill="currentColor"><path d="M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z"/></svg>` : '';
                         innerHtml += `
                             <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors" onclick="openEditModal('${t.id}')" style="border-left: 4px solid ${t.color}">
-                                <div class="text-[14px] font-bold text-gray-800 break-words mb-1 flex items-center min-w-0">
+                                <div class="text-[16px] font-bold text-gray-800 break-words mb-1 flex items-center min-w-0">
                                     <span class="truncate">${highlightText(t.name)}</span>
                                     ${alertHtml}
                                 </div>
-                                <div class="flex items-center justify-between mt-2">
-                                    <span class="text-[11px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">${t.owner}</span>
-                                    <span class="text-[11px] font-medium text-gray-400">${t.end.substring(5)} 截止</span>
+                                <div class="flex items-center justify-between mt-2.5">
+                                    <span class="text-[13px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">${t.owner}</span>
+                                    <span class="text-[13px] font-semibold text-gray-500">${t.end.substring(5)} 截止</span>
                                 </div>
                             </div>
                         `;
@@ -1319,6 +1325,8 @@
             const ganttCompletedCount = document.getElementById('ganttCompletedCount');
             const ganttCompletedWrapper = document.getElementById('ganttCompletedWrapper');
             
+            if (!dateRangeDisplay) return; 
+
             const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             const filteredTasks = displayTasks.filter(matchSearch);
             
@@ -1387,9 +1395,9 @@
                     if(!grouped[owner]) return;
                     
                     const catRowTrack = document.createElement('div');
-                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-20 shadow-[1px_0_0_0_#e5e7eb] py-1';
+                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-20 shadow-[1px_0_0_0_#e5e7eb] py-1.5';
                     catRowTrack.style.gridColumn = '1 / -1';
-                    catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2 h-2 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
+                    catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
                     wrap.appendChild(catRowTrack);
 
                     grouped[owner].sort((a,b) => taskSorter(a, b)).forEach(task => {
@@ -1501,14 +1509,14 @@
                     checkbox.onchange = () => toggleComplete(task.id);
                     
                     leftCol.innerHTML = `
-                        <div class="text-[13px] font-semibold truncate line-through text-gray-500">${highlightText(task.name)}</div>
+                        <div class="text-[14px] font-semibold truncate line-through text-gray-500">${highlightText(task.name)}</div>
                     `;
                     leftCol.prepend(checkbox);
                     
                     const rightCol = document.createElement('div');
-                    rightCol.className = 'text-[11px] text-gray-400 flex items-center gap-3 shrink-0';
+                    rightCol.className = 'text-[12px] text-gray-400 flex items-center gap-3 shrink-0';
                     rightCol.innerHTML = `
-                        <span class="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded"><div class="w-1.5 h-1.5 rounded-full" style="background-color: ${task.color}"></div>${task.owner}</span>
+                        <span class="flex items-center gap-1.5 bg-gray-50 px-1.5 py-0.5 rounded"><div class="w-2 h-2 rounded-full" style="background-color: ${task.color}"></div>${task.owner}</span>
                         <span>${task.end.substring(5)} 完结</span>
                     `;
                     itemDiv.appendChild(leftCol);
