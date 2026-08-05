@@ -20,8 +20,8 @@
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
-        .resize-handle:hover { background: rgba(0,0,0,0.2); }
+        .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 12px; cursor: ew-resize; z-index: 15; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.12)); border-top-right-radius: 0.375rem; border-bottom-right-radius: 0.375rem; }
+        .resize-handle:hover { background: rgba(0,0,0,0.25); }
         .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
         .rich-input a { color: #3b82f6; text-decoration: underline; }
         .history-rich-img img, .smart-log-rich img, .edit-log-rich img, .rich-input img, .task-details-rich img { max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; cursor: zoom-in; border-radius: 6px; display: inline-block; margin: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -1395,37 +1395,31 @@
             const wrap = document.createElement('div');
             wrap.className = 'gantt-grid min-w-max pb-10 relative min-h-full bg-white';
             
+            const weekDays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
+            
             let currentDay = new Date(renderMinDate);
             let todayIndex = -1;
             for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
                 const currentDateStr = formatDate(currentDay);
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
+                const dayStr = weekDays[currentDay.getDay()];
                 const isToday = currentDateStr === todayStr;
                 if(isToday) todayIndex = i;
                 
-                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[13px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-30 shadow-sm' : (isWeekend ? 'bg-gray-50/80 text-gray-400 z-20' : 'bg-white text-gray-500 z-20')}`;
+                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[13px] flex flex-col justify-end transition-colors bg-white text-gray-500 z-20 ${isToday ? 'z-30 shadow-sm' : ''}`;
                 dayHeader.setAttribute('data-date', currentDateStr);
                 if (isToday) dayHeader.style.backgroundColor = todayBgColor;
 
                 const dText = document.createElement('span');
                 dText.className = 'font-semibold pointer-events-none relative';
-                dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
+                dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日 ${dayStr}`;
                 if (isToday) {
                     dText.innerHTML += `<div class="absolute -top-[14px] left-1/2 -translate-x-1/2 w-5 h-[3px] bg-indigo-500 rounded-b-sm"></div>`;
                 }
                 dayHeader.appendChild(dText);
                 wrap.appendChild(dayHeader);
                 currentDay.setDate(currentDay.getDate() + 1);
-            }
-            
-            if (todayIndex !== -1) {
-                const todayColBg = document.createElement('div');
-                todayColBg.className = 'absolute top-0 bottom-0 pointer-events-none z-[1]';
-                todayColBg.style.gridColumn = String(todayIndex + 1);
-                todayColBg.style.gridRow = '1 / 9999';
-                todayColBg.style.backgroundColor = todayBgColor;
-                wrap.appendChild(todayColBg);
             }
             
             if (activeTasks.length > 0) {
@@ -1436,7 +1430,7 @@
                     if(!grouped[owner]) return;
                     
                     const catRowTrack = document.createElement('div');
-                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-[10] shadow-[1px_0_0_0_#e5e7eb] py-1.5';
+                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-10 shadow-[1px_0_0_0_#e5e7eb] py-1.5';
                     catRowTrack.style.gridColumn = '1 / -1';
                     catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
                     wrap.appendChild(catRowTrack);
@@ -1477,17 +1471,22 @@
                             const currentDateStr = formatDate(currentDay);
                             const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
                             const isToday = i === todayIndex;
-                            cell.className = `border-b border-r border-gray-100 relative h-[42px] z-[2] ${isWeekend && !isToday ? 'bg-slate-50/50' : 'bg-transparent'}`;
+                            cell.className = `border-b border-r border-gray-100 relative h-[42px] z-0 ${isWeekend && !isToday ? 'bg-slate-50/50' : 'bg-transparent'}`;
                             cell.setAttribute('data-date', currentDateStr);
+                            
+                            if (isToday) {
+                                cell.style.backgroundColor = todayBgColor;
+                                cell.style.borderLeft = '1px solid rgba(79, 70, 229, 0.15)';
+                            }
 
                             if (i === startIndex && visibleDuration > 0) {
                                 const bar = document.createElement('div');
                                 bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
-                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded-full flex items-center text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded-md flex items-center text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
                                 
                                 if(hiddenDays > 0) {
-                                    bar.classList.remove('rounded-full');
-                                    bar.classList.add('rounded-r-full');
+                                    bar.classList.remove('rounded-md');
+                                    bar.classList.add('rounded-r-md');
                                     bar.style.borderLeft = '2px dashed rgba(255,255,255,0.6)';
                                 }
                                 const textColor = getTextColor(task.color);
@@ -1500,18 +1499,29 @@
                                 };
                                 
                                 let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
-                                let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="w-[15px] h-[15px] text-red-500 alert-pulse drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
-                                let ownerHtml = (renderedVisibleDuration > 2) ? `<div class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-black/10 truncate max-w-[60px] pointer-events-none" style="color: ${textColor}">${task.owner}</div>` : '';
+                                
+                                let rightElementsHtml = '<div class="absolute right-[14px] top-0 bottom-0 flex items-center gap-1.5 z-20 pointer-events-none">';
+                                if (!task.completed && task.end <= todayStr) {
+                                    rightElementsHtml += `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>`;
+                                }
+                                if (renderedVisibleDuration > 2) {
+                                    rightElementsHtml += `<div class="text-[10px] font-bold px-1.5 py-0.5 rounded-sm bg-black/10 truncate max-w-[60px]" style="color: ${textColor}">${task.owner}</div>`;
+                                }
+                                rightElementsHtml += '</div>';
+
+                                let stickyHtml = `
+                                    <div class="sticky-task-content pointer-events-none flex items-center h-full max-w-[calc(100%-80px)] pl-1.5" title="${pureText}" style="-webkit-mask-image: linear-gradient(to right, #000 85%, transparent 100%); mask-image: linear-gradient(to right, #000 85%, transparent 100%);">
+                                        <span class="truncate drop-shadow-sm ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
+                                    </div>
+                                `;
                                 
                                 bar.innerHTML = `
-                                    ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l-full'}" style="width: ${pastPercentage}%"></div>` : ''}
-                                    <div class="sticky-task-content pointer-events-none flex items-center gap-1.5 ${renderedVisibleDuration > 2 ? 'pr-14' : 'pr-2'} pl-1.5" title="${pureText}">
-                                        <span class="truncate drop-shadow-sm ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
-                                        ${alertHtml}
-                                    </div>
-                                    ${ownerHtml}
-                                    <div class="resize-handle rounded-r-full"></div>
+                                    ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l-md'}" style="width: ${pastPercentage}%"></div>` : ''}
+                                    ${stickyHtml}
+                                    ${rightElementsHtml}
+                                    <div class="resize-handle rounded-r-md"></div>
                                 `;
+                                
                                 const handle = bar.querySelector('.resize-handle');
                                 handle.onmousedown = (e) => {
                                     e.stopPropagation();
@@ -1526,7 +1536,7 @@
                 });
             } else {
                 const emptyRow = document.createElement('div');
-                emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm bg-white/50 border-b border-gray-100 flex items-center justify-center';
+                emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm bg-white/50 border-b border-gray-100 flex items-center justify-center z-10';
                 emptyRow.style.gridColumn = '1 / -1';
                 emptyRow.innerHTML = '暂无活跃排期，尽情享受清空任务的快乐吧！🎉';
                 wrap.appendChild(emptyRow);
