@@ -14,13 +14,13 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .gantt-grid { display: grid; grid-template-columns: repeat(var(--total-days), minmax(110px, 1fr)); }
-        .task-completed-pattern { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2) 8px, transparent 8px, transparent 16px); opacity: 0.5; }
+        .task-completed-pattern { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2) 8px, transparent 8px, transparent 16px); }
         .dropdown-menu { transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: top; }
         .spinner { animation: rotate 2s linear infinite; }
         @keyframes rotate { 100% { transform: rotate(360deg); } }
         @keyframes pulse-red { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.8; transform: scale(1.15); } }
         .alert-pulse { animation: pulse-red 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
-        .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
+        .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
         .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
         .rich-input a { color: #3b82f6; text-decoration: underline; }
@@ -91,8 +91,8 @@
         <span class="writing-vertical text-[11px] font-bold text-gray-500 tracking-widest leading-none">已完成收纳</span>
         <span id="completedBadgeFloat" class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">0</span>
     </button>
-    <div id="completedDrawerOverlay" onclick="toggleCompletedDrawer()" class="fixed inset-0 bg-slate-900/20 backdrop-blur-[1px] z-[55] hidden opacity-0 transition-opacity duration-300"></div>
-    <div id="completedDrawer" class="fixed left-0 top-0 bottom-0 w-[300px] bg-[#f8fafc] shadow-2xl z-[60] transform -translate-x-full transition-transform duration-300 border-r border-gray-200 flex flex-col">
+    <div id="completedDrawerOverlay" onclick="toggleCompletedDrawer()" class="fixed inset-0 bg-slate-800/40 z-[55] hidden opacity-0 transition-opacity duration-300"></div>
+    <div id="completedDrawer" class="fixed left-0 top-0 bottom-0 w-[400px] max-w-[90vw] bg-[#f8fafc] shadow-2xl z-[60] transform -translate-x-full transition-transform duration-300 border-r border-gray-200 flex flex-col">
         <div class="p-4 bg-white border-b border-gray-200 flex justify-between items-center shadow-sm relative z-10 shrink-0">
             <h3 class="font-bold text-gray-800 flex items-center gap-2">
                 <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -1214,13 +1214,11 @@
                 item.className = 'bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 transition-all cursor-pointer opacity-70 hover:opacity-100 flex flex-col gap-2 shrink-0';
                 item.onclick = (e) => { if(e.target.type !== 'checkbox') openEditModal(task.id); };
                 item.innerHTML = `
-                    <div class="flex items-start gap-2 min-w-0">
-                        <input type="checkbox" checked class="mt-1 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 shrink-0" onchange="toggleComplete('${task.id}')">
-                        <div class="text-[13px] font-bold text-gray-500 line-through break-words w-full leading-snug">${highlightText(task.name)}</div>
-                    </div>
-                    <div class="flex items-center justify-between pl-6 mt-1">
+                    <div class="flex items-center gap-2.5 min-w-0">
+                        <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 shrink-0" onchange="toggleComplete('${task.id}')">
+                        <div class="text-[13px] font-bold text-gray-500 line-through truncate flex-1 leading-snug">${highlightText(task.name)}</div>
                         <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"><div class="w-1.5 h-1.5 rounded-full" style="background-color:${task.color}"></div>${task.owner}</span>
-                        <span class="text-[10px] font-medium text-gray-400 shrink-0">${task.end.substring(5)} 完结</span>
+                        <span class="text-[10px] font-medium text-gray-400 shrink-0">${task.end.substring(5)}</span>
                     </div>
                 `;
                 list.appendChild(item);
@@ -1268,7 +1266,7 @@
             
             let alertHtml = '';
             if (!task.completed && task.end <= todayStr) {
-                alertHtml = `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>`;
+                alertHtml = `<svg class="w-[15px] h-[15px] text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>`;
             }
             
             info.innerHTML = `
@@ -1332,7 +1330,7 @@
                     innerHtml += `<div class="text-center py-6 text-gray-400 text-xs">暂无</div>`;
                 } else {
                     col.items.sort((a,b) => getOwnerIndex(a.owner) - getOwnerIndex(b.owner) || new Date(a.end) - new Date(b.end)).forEach(t => {
-                        let alertHtml = (t.end <= todayStr) ? `<svg class="w-4 h-4 text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
+                        let alertHtml = (t.end <= todayStr) ? `<svg class="w-[15px] h-[15px] text-red-500 drop-shadow-sm alert-pulse shrink-0 ml-1.5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
                         innerHtml += `
                             <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm cursor-pointer hover:border-indigo-300 transition-colors shrink-0" onclick="openEditModal('${t.id}')" style="border-left: 4px solid ${t.color}">
                                 <div class="text-[15px] font-bold text-gray-800 break-words mb-1 flex items-center min-w-0">
@@ -1395,17 +1393,19 @@
             container.style.setProperty('--total-days', totalDays);
             
             const wrap = document.createElement('div');
-            wrap.className = 'gantt-grid min-w-max pb-4';
+            wrap.className = 'gantt-grid min-w-max pb-10 relative min-h-full bg-white';
             
             let currentDay = new Date(renderMinDate);
+            let todayIndex = -1;
             for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
                 const currentDateStr = formatDate(currentDay);
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
                 const isToday = currentDateStr === todayStr;
-                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[13px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-10 shadow-sm' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
-                dayHeader.setAttribute('data-date', currentDateStr);
+                if(isToday) todayIndex = i;
                 
+                dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[13px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-30 shadow-sm' : (isWeekend ? 'bg-gray-50/80 text-gray-400 z-20' : 'bg-white text-gray-500 z-20')}`;
+                dayHeader.setAttribute('data-date', currentDateStr);
                 if (isToday) dayHeader.style.backgroundColor = todayBgColor;
 
                 const dText = document.createElement('span');
@@ -1419,6 +1419,15 @@
                 currentDay.setDate(currentDay.getDate() + 1);
             }
             
+            if (todayIndex !== -1) {
+                const todayColBg = document.createElement('div');
+                todayColBg.className = 'absolute top-0 bottom-0 pointer-events-none z-[1]';
+                todayColBg.style.gridColumn = String(todayIndex + 1);
+                todayColBg.style.gridRow = '1 / 9999';
+                todayColBg.style.backgroundColor = todayBgColor;
+                wrap.appendChild(todayColBg);
+            }
+            
             if (activeTasks.length > 0) {
                 const grouped = groupBy(activeTasks, 'owner');
                 const map = getOwnerColorMap();
@@ -1427,7 +1436,7 @@
                     if(!grouped[owner]) return;
                     
                     const catRowTrack = document.createElement('div');
-                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-20 shadow-[1px_0_0_0_#e5e7eb] py-1.5';
+                    catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-[10] shadow-[1px_0_0_0_#e5e7eb] py-1.5';
                     catRowTrack.style.gridColumn = '1 / -1';
                     catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
                     wrap.appendChild(catRowTrack);
@@ -1447,6 +1456,7 @@
                         
                         const fullDuration = Math.round((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1;
                         const visibleDuration = fullDuration - hiddenDays;
+                        const renderedVisibleDuration = Math.min(visibleDuration, totalDays - startIndex);
                         
                         let pastPercentage = 0;
                         if (!task.completed && visibleDuration > 0) {
@@ -1466,20 +1476,18 @@
                             const cell = document.createElement('div');
                             const currentDateStr = formatDate(currentDay);
                             const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
-                            const isToday = currentDateStr === todayStr;
-                            cell.className = `border-b border-r border-gray-100 relative h-[42px] ${isWeekend && !isToday ? 'bg-slate-100/70' : 'bg-white'}`;
+                            const isToday = i === todayIndex;
+                            cell.className = `border-b border-r border-gray-100 relative h-[42px] z-[2] ${isWeekend && !isToday ? 'bg-slate-50/50' : 'bg-transparent'}`;
                             cell.setAttribute('data-date', currentDateStr);
-                            
-                            if (isToday) cell.style.backgroundColor = todayBgColor;
 
                             if (i === startIndex && visibleDuration > 0) {
                                 const bar = document.createElement('div');
-                                const renderedVisibleDuration = Math.min(visibleDuration, totalDays - startIndex);
                                 bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
-                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded flex items-center text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern grayscale' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded-full flex items-center text-[13px] font-semibold whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                
                                 if(hiddenDays > 0) {
-                                    bar.style.borderTopLeftRadius = '0';
-                                    bar.style.borderBottomLeftRadius = '0';
+                                    bar.classList.remove('rounded-full');
+                                    bar.classList.add('rounded-r-full');
                                     bar.style.borderLeft = '2px dashed rgba(255,255,255,0.6)';
                                 }
                                 const textColor = getTextColor(task.color);
@@ -1492,15 +1500,17 @@
                                 };
                                 
                                 let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
-                                let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="absolute left-full ml-1.5 top-1/2 -translate-y-1/2 w-[18px] h-[18px] text-red-500 alert-pulse drop-shadow-md z-20 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
+                                let alertHtml = (!task.completed && task.end <= todayStr) ? `<svg class="w-[15px] h-[15px] text-red-500 alert-pulse drop-shadow-sm shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0zM12 9a1 1 0 0 1 1 1v4a1 1 0 1 1-2 0v-4a1 1 0 0 1 1-1zm1 8a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"></path></svg>` : '';
+                                let ownerHtml = (renderedVisibleDuration > 2) ? `<div class="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] font-bold px-1.5 py-0.5 rounded-full bg-black/10 truncate max-w-[60px] pointer-events-none" style="color: ${textColor}">${task.owner}</div>` : '';
                                 
                                 bar.innerHTML = `
-                                    ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0" style="width: ${pastPercentage}%"></div>` : ''}
-                                    <div class="sticky-task-content pointer-events-none" title="${pureText}">
+                                    ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0 ${hiddenDays > 0 ? '' : 'rounded-l-full'}" style="width: ${pastPercentage}%"></div>` : ''}
+                                    <div class="sticky-task-content pointer-events-none flex items-center gap-1.5 ${renderedVisibleDuration > 2 ? 'pr-14' : 'pr-2'} pl-1.5" title="${pureText}">
                                         <span class="truncate drop-shadow-sm ${task.completed ? 'line-through opacity-80' : ''}">${highlightText(task.name)}</span>
+                                        ${alertHtml}
                                     </div>
-                                    ${alertHtml}
-                                    <div class="resize-handle"></div>
+                                    ${ownerHtml}
+                                    <div class="resize-handle rounded-r-full"></div>
                                 `;
                                 const handle = bar.querySelector('.resize-handle');
                                 handle.onmousedown = (e) => {
