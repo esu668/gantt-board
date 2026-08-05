@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>自定义甘特图生成器 - 智能看板版</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
@@ -14,8 +14,6 @@
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
         ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
         .gantt-grid { display: grid; grid-template-columns: 240px repeat(var(--total-days), minmax(110px, 1fr)); }
-        input[type="color"]::-webkit-color-swatch-wrapper { padding: 0; }
-        input[type="color"]::-webkit-color-swatch { border: none; border-radius: 8px; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.1); }
         .task-completed-pattern { background-image: repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.2), rgba(255, 255, 255, 0.2) 8px, transparent 8px, transparent 16px); opacity: 0.5; }
         .dropdown-menu { transition: opacity 0.15s ease, transform 0.15s ease; transform-origin: top; }
         .spinner { animation: rotate 2s linear infinite; }
@@ -23,8 +21,8 @@
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.5rem; border-bottom-right-radius: 0.5rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
         .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
+        .rich-input img { max-height: 100px; border-radius: 4px; margin-top: 4px; }
         .rich-input a { color: #3b82f6; text-decoration: underline; }
-        .history-rich-img img, .smart-log-rich img, .edit-log-rich img, .rich-input img, .task-details-rich img { max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; cursor: zoom-in; border-radius: 6px; display: inline-block; margin: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
         .gantt-corner { position: sticky; top: 0; z-index: 30; background: white; }
         .gantt-header { position: sticky; top: 0; z-index: 25; }
         @media (min-width: 768px) {
@@ -40,121 +38,151 @@
         .breathe-btn { border: none !important; outline: none !important; }
         .breathe-btn.active { animation: soft-breathe 2s infinite cubic-bezier(0.66, 0, 0.34, 1); }
         .task-past-mask { background-color: rgba(0, 0, 0, 0.12); border-right: 1.5px dashed rgba(255, 255, 255, 0.7); pointer-events: none; }
+        .drag-over { border: 2px dashed #6366f1 !important; background-color: rgba(99, 102, 241, 0.05) !important; }
     </style>
 </head>
 <body class="h-screen flex flex-col overflow-hidden text-gray-800 bg-[#f8fafc]">
     <div class="min-h-[56px] bg-white border-b border-gray-200 flex flex-wrap items-center justify-between px-3 md:px-5 py-2 md:py-0 shrink-0 z-50 relative shadow-sm gap-2">
         <div class="flex items-center gap-3 w-full md:w-auto justify-between md:justify-start">
             <div class="flex items-center gap-3">
-                <div class="flex items-center gap-2 cursor-pointer group" onclick="closeViewDropdown('全景看板', 'gantt')">
-                    <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 text-white font-bold text-lg shrink-0 group-hover:scale-105 transition-transform duration-200">G</div>
-                    <h1 class="font-bold text-gray-800 text-lg tracking-tight flex items-center flex-wrap gap-2 group-hover:text-indigo-600 transition-colors duration-200">
-                        在线协作甘特图 
-                    </h1>
-                </div>
-                <button onclick="openSettings()" class="text-xs text-indigo-600 font-medium px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 rounded-md border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer shrink-0">
-                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                    设置
-                </button>
-                <div class="text-[12px] text-gray-400 font-medium flex items-center gap-1.5 hidden shrink-0 ml-1" id="syncStatus"></div>
+                <div class="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center shadow-md shadow-indigo-200 text-white font-bold text-lg shrink-0">G</div>
+                <h1 class="font-bold text-gray-800 text-lg tracking-tight flex items-center flex-wrap gap-2">
+                    在线协作甘特图 
+                    <button onclick="openSettings()" class="text-xs text-indigo-600 font-medium px-2 py-0.5 bg-indigo-50 hover:bg-indigo-100 rounded-md border border-indigo-200 transition-colors flex items-center gap-1 cursor-pointer shrink-0">
+                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        设置
+                    </button>
+                    <div class="text-[12px] text-gray-400 font-medium flex items-center gap-1.5 hidden shrink-0 ml-1" id="syncStatus"></div>
+                </h1>
             </div>
         </div>
         <div class="flex flex-wrap items-center gap-1.5 w-full md:w-auto pb-1 md:pb-0">
+            <div class="relative w-full md:w-48 shrink-0 mr-1 md:mr-2">
+                <input type="text" id="globalSearch" oninput="handleSearch(this.value)" placeholder="全局搜索..." class="w-full pl-8 pr-3 py-1.5 bg-gray-100 border border-transparent rounded-lg text-xs focus:bg-white focus:border-indigo-300 focus:ring-2 focus:ring-indigo-100 outline-none transition-all text-gray-700">
+                <svg class="w-4 h-4 text-gray-400 absolute left-2.5 top-1/2 -translate-y-1/2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </div>
+
             <button onclick="switchView('log')" id="btnViewLog" class="breathe-btn px-3.5 py-1.5 text-[13px] font-bold rounded-lg shadow-sm transition-all shrink-0">每日进度</button>
-            <div class="flex items-stretch shadow-sm rounded-md shrink-0 ml-1 md:ml-3">
+            
+            <div class="flex items-stretch shadow-sm rounded-md shrink-0 ml-1">
                 <button id="viewMainBtn" type="button" onclick="switchView(currentDropdownViewMode)" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors focus:outline-none border-r-0">
-                    <span id="currentViewText">全景看板</span>
+                    <span id="currentViewText">全景排期</span>
                 </button>
                 <div class="relative custom-dropdown flex">
                     <button id="viewDropdownToggleBtn" type="button" onclick="document.getElementById('viewDropdownMenu').classList.toggle('hidden')" class="flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-indigo-100 border border-indigo-200 text-indigo-600 hover:bg-indigo-200 transition-colors focus:outline-none border-l">
                         <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
                     <div id="viewDropdownMenu" class="absolute left-auto right-0 top-full mt-1 w-28 bg-white border border-gray-200 rounded-lg shadow-lg hidden z-50 py-1.5 origin-top-right">
-                        <button type="button" onclick="closeViewDropdown('全景看板', 'gantt')" class="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">全景看板</button>
-                        <button type="button" onclick="closeViewDropdown('分屏协作', 'split')" class="hidden md:block w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">分屏协作</button>
+                        <button type="button" onclick="closeViewDropdown('全景排期', 'gantt')" class="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">全景排期</button>
+                        <button type="button" onclick="closeViewDropdown('截止看板', 'kanban')" class="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">截止看板</button>
+                        <button type="button" onclick="closeViewDropdown('专注录入', 'pool')" class="w-full text-left px-4 py-2 text-xs font-bold text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">专注录入</button>
                     </div>
                 </div>
             </div>
-            <button id="viewPoolBtn" type="button" onclick="switchView('pool')" class="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors focus:outline-none shrink-0 ml-1 shadow-sm">专注录入</button>
-            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0 ml-1 md:ml-3" id="filterButtonGroup">
+
+            <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0 ml-1 md:ml-2">
+                <button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>
+                <button onclick="filterByOwner('ESU')" id="btnFilterESU" class="px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all hidden">ESU</button>
+                <button onclick="filterByOwner('MIKO')" id="btnFilterMIKO" class="px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all hidden">MIKO</button>
+                <div id="dynamicFilterContainer" class="flex items-center gap-1"></div>
             </div>
+
             <button onclick="generateTwoDaySummaryImage()" class="shrink-0 flex items-center gap-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm ml-1">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
                 <span class="hidden md:inline">2日聚焦图</span>
             </button>
             <button onclick="pullDataFromCloud()" class="shrink-0 flex items-center gap-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-                <span class="hidden md:inline">同步进度</span>
+                <span class="hidden md:inline">同步</span>
             </button>
         </div>
     </div>
+    
     <div id="ganttSection" class="flex-1 flex flex-col p-2 md:p-4 pb-2 min-h-0 transition-all duration-300">
         <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden relative">
             <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-40">
                 <h2 class="text-base font-bold flex items-center gap-2 text-gray-800">
                     <svg class="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
-                    全局排期看板
+                    全景排期视图
                 </h2>
-                <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 flex items-center">等待添加任务...</div>
+                <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100">等待添加任务...</div>
             </div>
             <div class="flex-1 overflow-auto relative bg-gray-50/30 select-none" id="ganttContainer">
                 <div id="ganttEmptyState" class="h-full flex flex-col items-center justify-center text-gray-400">
                     <svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                    <p class="text-sm">请在下方录入任务，甘特图将自动生成并同步</p>
+                    <p class="text-sm">请在专注录入中添加任务，图表将自动生成并同步</p>
                 </div>
             </div>
         </div>
     </div>
-    <div id="taskSection" class="h-auto md:h-[380px] flex flex-col md:flex-row gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
-        <div class="w-full md:hidden flex items-stretch shadow-sm rounded-md shrink-0" id="mobTaskNav">
-            <button onclick="switchMobileTask('form')" id="mobBtnTaskForm" class="flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">添加排期</button>
-            <button onclick="switchMobileTask('pool')" id="mobBtnTaskPool" class="flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">任务管理池</button>
+
+    <div id="kanbanSection" class="flex-1 flex gap-4 p-2 md:p-4 pb-2 min-h-0 overflow-x-auto transition-all duration-300 hidden bg-[#f8fafc]">
+        <div class="flex-1 min-w-[260px] bg-red-50/50 rounded-2xl border border-red-100 flex flex-col shadow-sm" ondragover="handleDragOverKanban(event)" ondragleave="handleDragLeaveKanban(event)" ondrop="handleDropKanban(event, 'overdue')">
+            <div class="px-4 py-3 border-b border-red-100 bg-red-50/80 rounded-t-2xl shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-red-700 text-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> 已逾期</h3>
+                <span class="text-[11px] font-bold text-red-500 bg-white px-2 py-0.5 rounded shadow-sm" id="countOverdue">0</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3" id="kanbanOverdue"></div>
         </div>
-        <div id="mobTaskFormPanel" class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
+        <div class="flex-1 min-w-[260px] bg-amber-50/50 rounded-2xl border border-amber-100 flex flex-col shadow-sm" ondragover="handleDragOverKanban(event)" ondragleave="handleDragLeaveKanban(event)" ondrop="handleDropKanban(event, 'today')">
+            <div class="px-4 py-3 border-b border-amber-100 bg-amber-50/80 rounded-t-2xl shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-amber-700 text-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg> 今日截止</h3>
+                <span class="text-[11px] font-bold text-amber-500 bg-white px-2 py-0.5 rounded shadow-sm" id="countToday">0</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3" id="kanbanToday"></div>
+        </div>
+        <div class="flex-1 min-w-[260px] bg-blue-50/50 rounded-2xl border border-blue-100 flex flex-col shadow-sm" ondragover="handleDragOverKanban(event)" ondragleave="handleDragLeaveKanban(event)" ondrop="handleDropKanban(event, 'tomorrow')">
+            <div class="px-4 py-3 border-b border-blue-100 bg-blue-50/80 rounded-t-2xl shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-blue-700 text-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg> 明日截止</h3>
+                <span class="text-[11px] font-bold text-blue-500 bg-white px-2 py-0.5 rounded shadow-sm" id="countTomorrow">0</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3" id="kanbanTomorrow"></div>
+        </div>
+        <div class="flex-1 min-w-[260px] bg-emerald-50/50 rounded-2xl border border-emerald-100 flex flex-col shadow-sm" ondragover="handleDragOverKanban(event)" ondragleave="handleDragLeaveKanban(event)" ondrop="handleDropKanban(event, 'next7')">
+            <div class="px-4 py-3 border-b border-emerald-100 bg-emerald-50/80 rounded-t-2xl shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-emerald-700 text-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> 未来 7 天</h3>
+                <span class="text-[11px] font-bold text-emerald-500 bg-white px-2 py-0.5 rounded shadow-sm" id="countNext7">0</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3" id="kanbanNext7"></div>
+        </div>
+        <div class="flex-1 min-w-[260px] bg-slate-50/50 rounded-2xl border border-slate-200 flex flex-col shadow-sm" ondragover="handleDragOverKanban(event)" ondragleave="handleDragLeaveKanban(event)" ondrop="handleDropKanban(event, 'later')">
+            <div class="px-4 py-3 border-b border-slate-200 bg-slate-100/80 rounded-t-2xl shrink-0 flex justify-between items-center">
+                <h3 class="font-bold text-slate-600 text-sm flex items-center gap-1.5"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"></path></svg> 更远排期</h3>
+                <span class="text-[11px] font-bold text-slate-500 bg-white px-2 py-0.5 rounded shadow-sm border border-slate-100" id="countLater">0</span>
+            </div>
+            <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-3" id="kanbanLater"></div>
+        </div>
+    </div>
+    
+    <div id="taskSection" class="flex-1 flex gap-5 md:gap-4 p-2 md:p-4 pt-2 overflow-hidden shrink-0 transition-all duration-300 hidden">
+        <div class="w-full md:w-[320px] lg:w-[380px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm">添加新任务</h3>
             </div>
             <div class="p-5 overflow-y-auto">
-                <form id="taskForm" class="flex flex-col gap-3.5">
+                <form id="taskForm" class="flex flex-col gap-4">
                     <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">具体任务名称</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务名称</label>
                         <input type="text" id="taskName" required placeholder="例如：设计首页 Banner..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400">
                     </div>
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务细节/备注 (选填)</label>
-                        <div id="taskDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="填写具体的细项，支持直接粘贴图片或链接..."></div>
+                        <textarea id="taskDetails" rows="3" placeholder="填写具体的细项要求..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400 resize-none"></textarea>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 relative z-40">
-                        <div class="relative custom-combobox">
-                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">模块大类</label>
+                    <div class="relative z-40">
+                        <div class="custom-combobox relative">
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">负责人</label>
                             <div class="relative flex items-center">
-                                <input type="text" id="category" required placeholder="选择或输入新大类..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
+                                <input type="text" id="owner" required placeholder="选择或输入..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
                                 <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
-                                    <svg id="categoryArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    <button type="button" id="categoryClearBtn" onclick="clearInput('category')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+                                    <svg id="ownerArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                                    <button type="button" id="ownerClearBtn" onclick="clearInput('owner')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
                                 </div>
                             </div>
-                            <ul id="categoryDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
-                        </div>
-                        <div class="flex gap-2">
-                            <div class="flex-1 custom-combobox relative">
-                                <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">负责人</label>
-                                <div class="relative flex items-center">
-                                    <input type="text" id="owner" required placeholder="选择或输入..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
-                                    <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
-                                        <svg id="ownerArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                        <button type="button" id="ownerClearBtn" onclick="clearInput('owner')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                                    </div>
-                                </div>
-                                <ul id="ownerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
-                            </div>
-                            <div class="w-[46px] shrink-0">
-                                <label class="block text-[11px] font-bold text-gray-500 mb-1.5 text-center">颜色</label>
-                                <input type="color" id="taskColor" value="#fde047" class="w-full h-[38px] cursor-pointer bg-white border border-gray-300 p-1 rounded-xl shadow-sm">
-                            </div>
+                            <ul id="ownerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
                         </div>
                     </div>
-                    <div class="grid grid-cols-2 gap-3 mt-1 relative z-30">
+                    <div class="grid grid-cols-2 gap-3 relative z-30">
                         <div>
                             <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">开始</label>
                             <input type="date" id="startDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
@@ -164,29 +192,26 @@
                             <input type="date" id="endDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
                         </div>
                     </div>
-                    <button type="submit" class="mt-2 w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-md flex items-center justify-center gap-2">
+                    <button type="submit" class="mt-4 w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-md flex items-center justify-center gap-2">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                         添加至任务池
                     </button>
                 </form>
             </div>
         </div>
-        <div id="mobTaskPoolPanel" class="hidden md:flex flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex-col overflow-hidden md:max-h-none">
+        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
-                <h3 class="font-semibold text-gray-700 text-sm">任务管理池</h3>
+                <h3 class="font-semibold text-gray-700 text-sm">任务池 <span class="text-xs font-normal text-gray-400 ml-2">(自动按人员分组排序)</span></h3>
                 <span class="text-xs bg-white border border-gray-200 px-2.5 py-1 rounded-md text-gray-500 font-medium shadow-sm" id="taskCountBadge">共 0 项</span>
             </div>
             <div class="flex-1 overflow-y-auto p-4" id="taskPoolContainer">
-                <div id="poolEmptyState" class="h-full flex flex-col items-center justify-center text-gray-400 text-sm">暂无任务</div>
+                <div id="poolEmptyState" class="h-full flex flex-col items-center justify-center text-gray-400 text-sm">暂无任务或无匹配结果</div>
             </div>
         </div>
     </div>
-    <div id="logPageSection" class="flex-1 flex flex-col md:flex-row gap-4 p-2 md:p-4 pb-2 min-h-0 transition-all duration-300 hidden bg-[#f8fafc]">
-        <div class="w-full md:hidden flex items-stretch shadow-sm rounded-md shrink-0 mb-1" id="mobLogNav">
-            <button onclick="switchMobileLog('form')" id="mobBtnForm" class="flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">进度汇报</button>
-            <button onclick="switchMobileLog('history')" id="mobBtnHistory" class="flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">历史进度流</button>
-        </div>
-        <div id="mobLogFormPanel" class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
+
+    <div id="logPageSection" class="flex-1 flex gap-4 p-2 md:p-4 pb-2 min-h-0 transition-all duration-300 hidden bg-[#f8fafc]">
+        <div class="w-full md:w-[320px] lg:w-[380px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
                 <h3 class="font-semibold text-gray-700 text-sm flex items-center gap-2">
                     <svg class="w-4 h-4 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
@@ -197,7 +222,8 @@
                     <input type="date" id="smartLogDateInput" class="text-xs font-semibold text-gray-700 bg-white border border-gray-200 rounded-md px-1.5 py-0.5 focus:outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 cursor-pointer shadow-sm transition-colors" onchange="changeLogDate(this.value)">
                 </div>
             </div>
-            <div class="p-4 overflow-y-auto flex-1 bg-gray-50/30" id="smartLogContainer"></div>
+            <div class="p-4 overflow-y-auto flex-1 bg-gray-50/30" id="smartLogContainer">
+            </div>
             <div class="p-4 border-t border-gray-100 bg-white shrink-0">
                 <button onclick="submitSmartLogs()" class="w-full bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-sm text-sm flex items-center justify-center gap-2">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path></svg>
@@ -205,91 +231,29 @@
                 </button>
             </div>
         </div>
-        <div id="mobLogHistoryPanel" class="hidden md:flex flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex-col overflow-hidden">
+
+        <div class="flex-1 bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden">
             <div class="px-5 py-3 border-b border-gray-100 flex justify-between items-center bg-white z-40 shrink-0">
                 <h2 class="text-base font-bold flex items-center gap-2 text-gray-800">
                     <svg class="w-5 h-5 text-purple-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"></path></svg>
                     历史进度流
                 </h2>
             </div>
-            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/30 overflow-x-hidden" id="logListContainer"></div>
-        </div>
-    </div>
-    
-   <div id="imageModal" class="fixed inset-0 z-[300] bg-slate-900/80 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4" onclick="if(event.target === this) closeImageModal()">
-        <div class="bg-white p-6 rounded-2xl relative max-w-[800px] w-full shadow-2xl flex flex-col max-h-[90vh]">
-            <button onclick="closeImageModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors z-10 bg-white rounded-full p-1 shadow-sm">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
-            </button>
-            <h3 id="imageModalTitle" class="text-center font-bold text-gray-800 mb-1 text-lg shrink-0">图片预览</h3>
-            <p id="imageModalTip" class="text-center text-sm text-gray-500 mb-4 shrink-0 hidden">长按图片或右键即可保存/复制</p>
-            <div id="imageModalContainer" class="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden p-2 flex-1 flex justify-center items-center relative touch-none select-none">
-                <img id="generatedImg" src="" class="max-w-full max-h-full shadow-sm rounded-lg pointer-events-auto object-contain cursor-grab transition-none" draggable="false" style="-webkit-touch-callout: default; user-select: auto;">
+            <div class="flex-1 overflow-y-auto p-4 md:p-6 bg-gray-50/30" id="logListContainer">
             </div>
-            <p class="text-center text-[11px] text-gray-400 mt-3 font-medium shrink-0">支持鼠标滚轮或双指缩放，按住可拖拽</p>
         </div>
     </div>
 
-    <div id="quickAddModal" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
-        <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl overflow-y-auto max-h-full">
-            <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">添加新排期</h3>
-            <form id="quickAddForm" class="flex flex-col gap-3.5">
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">具体任务名称</label>
-                    <input type="text" id="qaName" required placeholder="例如：设计首页 Banner..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400">
-                </div>
-                <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务细节/备注 (选填)</label>
-                    <div id="qaDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="填写具体的细项，支持直接粘贴图片或链接..."></div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 relative z-[60]">
-                    <div class="relative custom-combobox">
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">模块大类</label>
-                        <div class="relative flex items-center">
-                            <input type="text" id="qaCategory" required placeholder="选择或输入新大类..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
-                            <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
-                                <svg id="qaCategoryArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                <button type="button" id="qaCategoryClearBtn" onclick="clearInput('qaCategory')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                            </div>
-                        </div>
-                        <ul id="qaCategoryDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-[70] py-1 opacity-0 scale-y-95"></ul>
-                    </div>
-                    <div class="flex gap-2">
-                        <div class="flex-1 custom-combobox relative">
-                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">负责人</label>
-                            <div class="relative flex items-center">
-                                <input type="text" id="qaOwner" required placeholder="选择或输入..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
-                                <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
-                                    <svg id="qaOwnerArrow" class="w-4 h-4 text-gray-400 pointer-events-none transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
-                                    <button type="button" id="qaOwnerClearBtn" onclick="clearInput('qaOwner')" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-md" title="清空"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                                </div>
-                            </div>
-                            <ul id="qaOwnerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-[70] py-1 opacity-0 scale-y-95"></ul>
-                        </div>
-                        <div class="w-[46px] shrink-0">
-                            <label class="block text-[11px] font-bold text-gray-500 mb-1.5 text-center">颜色</label>
-                            <input type="color" id="qaColor" value="#fde047" class="w-full h-[38px] cursor-pointer bg-white border border-gray-300 p-1 rounded-xl shadow-sm">
-                        </div>
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-1 relative z-30">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">开始</label>
-                        <input type="date" id="qaStartDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">结束</label>
-                        <input type="date" id="qaEndDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
-                    </div>
-                </div>
-                <div class="flex justify-end gap-3 mt-2">
-                    <button type="button" onclick="document.getElementById('quickAddModal').classList.add('hidden')" class="px-4 py-2.5 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm transition-colors">取消</button>
-                    <button type="submit" class="flex-1 bg-slate-900 text-white font-medium py-2.5 rounded-xl hover:bg-slate-800 transition-colors shadow-md flex items-center justify-center gap-2">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                        添加排期
-                    </button>
-                </div>
-            </form>
+    <div id="imageModal" class="fixed inset-0 z-[300] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
+        <div class="bg-white p-6 rounded-2xl relative max-w-[560px] w-full shadow-2xl">
+            <button onclick="document.getElementById('imageModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-gray-800 transition-colors">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+            <h3 class="text-center font-bold text-gray-800 mb-1 text-lg">图片已生成</h3>
+            <p class="text-center text-sm text-gray-500 mb-4">如果在浏览器中无法直接复制，请在下方图片<span class="font-bold text-indigo-500">右键选择“复制图片”</span></p>
+            <div class="bg-gray-50 border border-gray-200 rounded-xl overflow-hidden p-2 max-h-[70vh] overflow-y-auto">
+                <img id="generatedImg" src="" class="w-full shadow-sm rounded-lg pointer-events-auto">
+            </div>
         </div>
     </div>
 
@@ -299,24 +263,18 @@
             <form id="editForm" class="flex flex-col gap-4">
                 <input type="hidden" id="editTaskId">
                 <div>
-                    <label class="block text-xs font-bold text-gray-500 mb-1.5">具体任务名称</label>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">任务名称</label>
                     <input type="text" id="editTaskName" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                 </div>
                 <div>
                     <label class="block text-xs font-bold text-gray-500 mb-1.5">任务细节/备注 (选填)</label>
-                    <div id="editTaskDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50 min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700 bg-white" contenteditable="true" data-placeholder="支持直接粘贴图片或链接..."></div>
+                    <textarea id="editTaskDetails" rows="3" class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50 resize-none"></textarea>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">负责人</label>
+                    <input type="text" id="editOwner" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                 </div>
                 <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5">模块大类</label>
-                        <input type="text" id="editCategory" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold text-gray-500 mb-1.5">负责人</label>
-                        <input type="text" id="editOwner" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
-                    </div>
-                </div>
-                <div class="grid grid-cols-2 gap-3 mt-1">
                     <div>
                         <label class="block text-xs font-bold text-gray-500 mb-1.5">开始</label>
                         <input type="date" id="editStartDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
@@ -326,88 +284,54 @@
                         <input type="date" id="editEndDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                     </div>
                 </div>
-                <div class="flex items-center gap-2 mt-1 px-1">
+                
+                <div class="flex items-center gap-2 mt-2 px-1">
                     <input type="checkbox" id="editCompleted" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
-                    <label for="editCompleted" class="text-xs font-bold text-gray-600 cursor-pointer">将此任务标记为已完成</label>
+                    <label for="editCompleted" class="text-sm font-bold text-gray-600 cursor-pointer">将此任务标记为已完成</label>
                 </div>
-                <div class="flex justify-end gap-3 mt-2">
+
+                <div class="flex justify-end gap-3 mt-4">
                     <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
                     <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 text-sm">保存修改</button>
                 </div>
             </form>
         </div>
     </div>
-    
-    <div id="quickCompleteModal" class="fixed inset-0 z-[450] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
-        <div class="bg-white p-5 rounded-2xl relative max-w-[500px] w-full shadow-2xl flex flex-col max-h-[90vh]">
-            <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">确认任务完成</h3>
-            <input type="hidden" id="quickCompleteTaskId">
-            <div class="bg-gray-50 border border-gray-200 p-3.5 rounded-xl shadow-sm">
-                <div class="font-bold text-[13px] text-gray-800 mb-2" id="quickCompleteTaskName"></div>
-                <div class="flex items-center gap-2 mb-2">
-                    <select id="quickCompleteStatus" class="w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-bold outline-none transition-colors bg-emerald-50 text-emerald-700 border-emerald-200" disabled>
-                        <option value="已完成" selected>已完成</option>
-                    </select>
-                    <input type="text" id="quickCompleteComp" class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white outline-none" placeholder="填写完成度 (选填)...">
-                </div>
-                <div id="quickCompleteRich" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="支持直接粘贴图片、链接或补充说明..."></div>
-            </div>
-            <div class="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-100">
-                <button type="button" onclick="cancelQuickComplete()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
-                <button type="button" onclick="saveQuickComplete()" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 text-sm">保存并记录</button>
-            </div>
-        </div>
-    </div>
 
     <div id="settingsModal" class="fixed inset-0 z-[260] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
-        <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl overflow-y-auto max-h-[95vh]">
+        <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl">
             <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2 flex items-center gap-2">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
                 全局设置
             </h3>
             <div class="flex flex-col gap-4">
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <label class="block text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider">模块大类配置 (标签化)</label>
-                    <div id="categoryTagContainer" class="flex flex-wrap gap-2 mb-3"></div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="newCategoryInput" class="flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50 bg-white" placeholder="输入新大类并按回车添加..." onkeydown="if(event.key === 'Enter') { event.preventDefault(); addCategoryTag(); }">
-                        <button type="button" onclick="addCategoryTag()" class="px-3 py-1.5 bg-indigo-50 text-indigo-600 font-bold rounded-lg border border-indigo-200 hover:bg-indigo-100 transition-colors text-xs shadow-sm">添加</button>
-                    </div>
+                    <label class="block text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider flex justify-between">
+                        <span>人员专属颜色与排序</span>
+                        <span class="text-[10px] text-gray-400 font-normal">可拖拽排序，仅限Hex输入</span>
+                    </label>
+                    <div id="settingsOwnerContainer" class="flex flex-col gap-2"></div>
                 </div>
-                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
-                    <label class="block text-xs font-bold text-gray-600 mb-3 uppercase tracking-wider">人员与专属颜色配置</label>
-                    <div id="settingsOwnerList" class="flex flex-col gap-3"></div>
-                    <button type="button" onclick="addOwnerRow('', '#000000')" class="text-xs text-indigo-600 mt-3 font-bold flex items-center gap-1 hover:text-indigo-800 transition-colors">
-                        <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                        新增成员
-                    </button>
-                </div>
-                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                
+                <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col gap-3">
                     <div class="flex justify-between items-center">
                         <span class="text-sm font-semibold text-gray-700">今日高亮底色 (甘特图)</span>
                         <div class="flex items-center gap-2">
-                            <input type="text" id="setHexTodayBg" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" oninput="document.getElementById('setColTodayBg').value = this.value">
-                            <input type="color" id="setColTodayBg" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" oninput="document.getElementById('setHexTodayBg').value = this.value">
+                            <div class="w-6 h-6 rounded border border-gray-300" id="previewTodayBg"></div>
+                            <input type="text" id="setHexTodayBg" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" placeholder="#EEF2FF" oninput="updateHexPreview(this.value, 'previewTodayBg')">
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <div class="flex justify-between items-center border-t border-gray-200 pt-3">
                         <span class="text-sm font-semibold text-gray-700">每日进度背景色</span>
                         <div class="flex items-center gap-2">
-                            <input type="text" id="setHexLogBg" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" oninput="document.getElementById('setColLogBg').value = this.value">
-                            <input type="color" id="setColLogBg" class="w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" oninput="document.getElementById('setHexLogBg').value = this.value">
+                            <div class="w-6 h-6 rounded border border-gray-300" id="previewLogBg"></div>
+                            <input type="text" id="setHexLogBg" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" placeholder="#4F46E5" oninput="updateHexPreview(this.value, 'previewLogBg')">
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
+                    <div class="flex justify-between items-center border-t border-gray-200 pt-3">
                         <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">每日进度默认展开</span>
                         <label class="relative inline-flex items-center cursor-pointer">
                             <input type="checkbox" id="setLogExpand" class="sr-only peer">
-                            <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
-                        </label>
-                    </div>
-                    <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center">
-                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">启动时自动弹出2日聚焦图</span>
-                        <label class="relative inline-flex items-center cursor-pointer">
-                            <input type="checkbox" id="setAutoSummary" class="sr-only peer">
                             <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
@@ -419,46 +343,27 @@
             </div>
         </div>
     </div>
-    <div id="delConfirmModal" class="fixed inset-0 z-[450] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
-        <div class="bg-white p-5 rounded-2xl relative max-w-[320px] w-full shadow-2xl">
-            <h3 class="font-bold text-gray-800 mb-2 text-lg">删除确认</h3>
-            <p class="text-sm text-gray-500 mb-5">确定要永久删除这条进度流记录吗？此操作无法撤销。</p>
-            <div class="flex justify-end gap-3">
-                <button type="button" onclick="document.getElementById('delConfirmModal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
-                <button type="button" id="delConfirmBtn" class="px-4 py-2 bg-red-500 text-white font-medium rounded-xl hover:bg-red-600 text-sm">确认删除</button>
-            </div>
-        </div>
-    </div>
-    <div id="editLogModal" class="fixed inset-0 z-[450] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
-        <div class="bg-white p-5 rounded-2xl relative max-w-[500px] w-full shadow-2xl flex flex-col max-h-[90vh]">
-            <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">修改历史进度</h3>
-            <input type="hidden" id="editLogId">
-            <div id="editLogContentWrapper" class="flex-1 overflow-y-auto pr-1 flex flex-col gap-4"></div>
-            <div class="flex justify-end gap-3 mt-4 pt-3 border-t border-gray-100">
-                <button type="button" onclick="document.getElementById('editLogModal').classList.add('hidden')" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
-                <button type="button" onclick="saveLogEdit()" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 text-sm">保存修改</button>
-            </div>
-        </div>
-    </div>
-    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 -translate-y-5 pointer-events-none z-[500] flex items-center gap-2 max-w-[90%]">
+    
+    <div id="toast" class="fixed top-20 left-1/2 transform -translate-x-1/2 bg-slate-800 text-white px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 opacity-0 -translate-y-5 pointer-events-none z-[400] flex items-center gap-2 max-w-[90%]">
         <span id="toastIcon"></span>
-        <span id="toastMsg" class="text-sm font-medium break-all"></span>
+        <span id="toastMsg" class="text-sm font-medium"></span>
     </div>
+
     <script>
-       const cloudConfig = {
-            binId: '6a5a450df5f4af5e299ceb09'
+        const cloudConfig = {
+            binId: '6a5a450df5f4af5e299ceb09',
+            apiKey: '$2a$10$yumOXVcT8jdqDb0eObTP1.MXJTmg.44r9Ush3QdJHgsaUh1RZyEwm'
         };
+        
+        let ownersOrder = ['ESU', 'MIKO', '公共'];
         let ownerColors = { "ESU": "#fde047", "MIKO": "#c084fc", "公共": "#93c5fd" };
-        let globalCategories = new Set(['网站与产品', '供应链与物料', '社媒与营销']); 
-        let tempCategories = []; 
         let tasks = [];
         let dailyLogs = [];
         let currentOwnerFilter = 'all';
         let defaultLogExpand = false;
-        let isGanttExpanded = false;
-        let autoShowSummary = localStorage.getItem('gantt_auto_summary') === 'true';
         let logBgColor = '#4f46e5'; 
         let todayBgColor = '#eef2ff';
+        let searchQuery = '';
         const initialExtractedData = [];
         
         function getBeijingDateStr() {
@@ -467,12 +372,21 @@
         }
         
         const todayStr = getBeijingDateStr();
+        const tDate = new Date(todayStr);
+        tDate.setDate(tDate.getDate() + 1);
+        const tomorrowStr = formatDate(tDate);
+        const yDate = new Date(todayStr);
+        yDate.setDate(yDate.getDate() - 1);
+        const yesterdayStr = formatDate(yDate);
         
         let currentLogDate = todayStr;
         let currentDropdownViewMode = 'gantt';
         
-        let dragInfo = null;
+        document.getElementById('startDate').value = todayStr;
+        document.getElementById('endDate').value = todayStr;
+        document.getElementById('smartLogDateInput').value = todayStr;
         
+        let dragInfo = null;
         const ganttContainer = document.getElementById('ganttContainer');
         let isDown = false;
         let startX;
@@ -500,39 +414,10 @@
             const walk = (x - startX) * 1.5; 
             ganttContainer.scrollLeft = scrollLeft - walk;
         });
-        
-        ganttContainer.addEventListener('contextmenu', (e) => {
-            if (e.target.closest('.resize-handle') || e.target.closest('.absolute.top-1\\.5')) return;
-            e.preventDefault();
-            const cell = e.target.closest('[data-date]');
-            if (cell) {
-                const date = cell.getAttribute('data-date');
-                document.getElementById('qaStartDate').value = date;
-                document.getElementById('qaEndDate').value = date;
-                
-                document.getElementById('qaName').value = '';
-                document.getElementById('qaDetails').innerHTML = '';
-                document.getElementById('qaCategory').value = '';
-                document.getElementById('qaOwner').value = '';
-                document.getElementById('qaColor').value = '#fde047';
-                toggleClearBtn('qaCategory');
-                toggleClearBtn('qaOwner');
-                
-                document.getElementById('quickAddModal').classList.remove('hidden');
-                setTimeout(() => document.getElementById('qaName').focus(), 100);
-            }
-        });
 
         document.addEventListener('click', (e) => {
             if(!e.target.closest('.custom-dropdown')) {
                 document.getElementById('viewDropdownMenu')?.classList.add('hidden');
-            }
-            if(e.target.tagName === 'IMG' && !e.target.closest('#imageModal')) {
-                document.getElementById('generatedImg').src = e.target.src;
-                document.getElementById('imageModal').classList.remove('hidden');
-                document.getElementById('imageModalTitle').textContent = '图片预览';
-                document.getElementById('imageModalTip').classList.add('hidden');
-                resetImgTransform();
             }
         });
 
@@ -546,151 +431,165 @@
             return (yiq >= 128) ? '#1e293b' : '#ffffff';
         }
 
+        function formatHexInput(val) {
+            let hex = val.trim();
+            if(!hex.startsWith('#')) hex = '#' + hex;
+            return hex.substring(0, 7).toLowerCase();
+        }
+
+        function updateHexPreview(val, targetId) {
+            const hex = formatHexInput(val);
+            if(/^#[0-9a-fA-F]{6}$/i.test(hex)) {
+                document.getElementById(targetId).style.backgroundColor = hex;
+            }
+        }
+
         function applyLogBtnStyle() {
             document.documentElement.style.setProperty('--log-bg-color', logBgColor);
             const btn = document.getElementById('btnViewLog');
             btn.style.backgroundColor = logBgColor;
             btn.style.color = getTextColor(logBgColor);
         }
-        
-        window.updateStatusColor = function(select) {
-            select.classList.remove('bg-emerald-50', 'text-emerald-700', 'border-emerald-200', 'bg-blue-50', 'text-blue-700', 'border-blue-200', 'bg-red-50', 'text-red-700', 'border-red-200', 'bg-white', 'text-gray-700', 'border-gray-300');
-            if (select.value === '已完成') select.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
-            else if (select.value === '推进中') select.classList.add('bg-blue-50', 'text-blue-700', 'border-blue-200');
-            else if (select.value === '未完成') select.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
-            else select.classList.add('bg-white', 'text-gray-700', 'border-gray-300');
-        };
 
-        window.addOwnerRow = function(name='', color='#000000') {
-            const div = document.createElement('div');
-            div.className = 'flex items-center gap-2 owner-setting-row';
-            div.innerHTML = `
-                <input type="text" class="owner-name flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs" placeholder="输入成员名称..." value="${name}">
-                <div class="flex items-center gap-1">
-                    <input type="color" class="owner-color w-10 h-8 cursor-pointer bg-white border border-gray-300 p-0.5 rounded shadow-sm" value="${color}">
-                </div>
-                <button type="button" onclick="this.parentElement.remove()" class="p-1.5 text-gray-400 hover:text-red-500 bg-gray-100 hover:bg-red-50 rounded-lg transition-colors"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-            `;
-            document.getElementById('settingsOwnerList').appendChild(div);
-        };
+        let tempOwnersOrder = [];
+        let draggedOwnerIndex = -1;
 
-        function renderFilterButtons() {
-            const container = document.getElementById('filterButtonGroup');
-            container.innerHTML = `<button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all">全员视角</button>`;
-            Object.keys(ownerColors).forEach(owner => {
-                const btn = document.createElement('button');
-                btn.onclick = () => filterByOwner(owner);
-                btn.id = 'btnFilter' + owner.replace(/\s+/g, '');
-                btn.className = 'px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all';
-                btn.textContent = owner;
-                container.appendChild(btn);
-            });
-        }
-        
-        function renderCategoryTags() {
-            const container = document.getElementById('categoryTagContainer');
-            if(tempCategories.length === 0) {
-                container.innerHTML = `<span class="text-xs text-gray-400 italic py-1">暂无分类标签</span>`;
-                return;
-            }
-            container.innerHTML = tempCategories.map((cat, idx) => `
-                <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-white border border-gray-200 text-xs font-medium text-gray-700 shadow-sm">
-                    ${cat}
-                    <button type="button" onclick="removeCategoryTag(${idx})" class="text-gray-400 hover:text-red-500 focus:outline-none transition-colors"><svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"></path></svg></button>
-                </span>
-            `).join('');
-        }
-
-        window.addCategoryTag = function() {
-            const input = document.getElementById('newCategoryInput');
-            const val = input.value.trim();
-            if(val && !tempCategories.includes(val)) {
-                tempCategories.push(val);
-                renderCategoryTags();
-            }
-            input.value = '';
-        };
-
-        window.removeCategoryTag = function(idx) {
-            tempCategories.splice(idx, 1);
-            renderCategoryTags();
-        };
-
-        window.openSettings = function() {
-            document.getElementById('settingsOwnerList').innerHTML = '';
-            for(let key in ownerColors) addOwnerRow(key, ownerColors[key]);
-            if(Object.keys(ownerColors).length === 0) addOwnerRow('', '#000000');
-
-            tempCategories = Array.from(globalCategories);
-            renderCategoryTags();
-            document.getElementById('newCategoryInput').value = '';
-            
+        function openSettings() {
+            tempOwnersOrder = [...ownersOrder];
+            renderSettingsOwners();
             document.getElementById('setHexTodayBg').value = todayBgColor;
-            document.getElementById('setColTodayBg').value = todayBgColor;
-           document.getElementById('setHexLogBg').value = logBgColor;
-            document.getElementById('setColLogBg').value = logBgColor;
+            document.getElementById('previewTodayBg').style.backgroundColor = todayBgColor;
+            document.getElementById('setHexLogBg').value = logBgColor;
+            document.getElementById('previewLogBg').style.backgroundColor = logBgColor;
             document.getElementById('setLogExpand').checked = defaultLogExpand;
-            document.getElementById('setAutoSummary').checked = autoShowSummary;
             document.getElementById('settingsModal').classList.remove('hidden');
-        };
+        }
 
-        window.closeSettings = function() {
+        function closeSettings() {
             document.getElementById('settingsModal').classList.add('hidden');
-        };
+        }
 
-        window.saveSettings = function() {
-            ownerColors = {};
-            document.querySelectorAll('.owner-setting-row').forEach(row => {
-                const name = row.querySelector('.owner-name').value.trim();
-                const color = row.querySelector('.owner-color').value;
-                if(name) ownerColors[name] = color;
+        function renderSettingsOwners() {
+            const container = document.getElementById('settingsOwnerContainer');
+            container.innerHTML = '';
+            tempOwnersOrder.forEach((owner, idx) => {
+                const hex = ownerColors[owner] || '#cccccc';
+                container.innerHTML += `
+                    <div class="flex items-center justify-between p-2.5 bg-white border border-gray-200 rounded-lg shadow-sm transition-transform" draggable="true" ondragstart="dragStartOwner(event, ${idx})" ondragover="dragOverOwner(event, ${idx})" ondrop="dropOwner(event, ${idx})" ondragend="dragEndOwner(event)">
+                        <div class="flex items-center gap-3 cursor-grab">
+                            <svg class="w-4 h-4 text-gray-400 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8h16M4 16h16"></path></svg>
+                            <span class="text-sm font-bold text-gray-700">${owner}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-6 h-6 rounded border border-gray-200" id="previewSetHex_${idx}" style="background-color: ${hex}"></div>
+                            <input type="text" class="w-20 px-2 py-1 border border-gray-300 rounded text-xs uppercase" value="${hex}" oninput="updateHexPreview(this.value, 'previewSetHex_${idx}'); tempOwnerColorChange('${owner}', this.value)" placeholder="#XXXXXX">
+                        </div>
+                    </div>
+                `;
             });
-            
-            globalCategories = new Set(tempCategories);
+        }
 
-            todayBgColor = document.getElementById('setColTodayBg').value;
-            logBgColor = document.getElementById('setColLogBg').value;
-            defaultLogExpand = document.getElementById('setLogExpand').checked;
-            autoShowSummary = document.getElementById('setAutoSummary').checked;
-            localStorage.setItem('gantt_auto_summary', autoShowSummary);
+        window.dragStartOwner = function(e, idx) {
+            draggedOwnerIndex = idx;
+            e.dataTransfer.effectAllowed = "move";
+            e.target.style.opacity = '0.5';
+        }
+        window.dragOverOwner = function(e, idx) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+        }
+        window.dropOwner = function(e, idx) {
+            e.preventDefault();
+            if(draggedOwnerIndex !== idx && draggedOwnerIndex !== -1) {
+                const moved = tempOwnersOrder.splice(draggedOwnerIndex, 1)[0];
+                tempOwnersOrder.splice(idx, 0, moved);
+                renderSettingsOwners();
+            }
+        }
+        window.dragEndOwner = function(e) {
+            e.target.style.opacity = '1';
+            draggedOwnerIndex = -1;
+        }
+        window.tempOwnerColorChange = function(owner, val) {
+            const hex = formatHexInput(val);
+            if(/^#[0-9a-fA-F]{6}$/i.test(hex)) {
+                ownerColors[owner] = hex;
+            }
+        }
+
+        function saveSettings() {
+            ownersOrder = [...tempOwnersOrder];
             
+            const tb = formatHexInput(document.getElementById('setHexTodayBg').value);
+            if(/^#[0-9a-fA-F]{6}$/i.test(tb)) todayBgColor = tb;
+            
+            const lb = formatHexInput(document.getElementById('setHexLogBg').value);
+            if(/^#[0-9a-fA-F]{6}$/i.test(lb)) logBgColor = lb;
+            
+            defaultLogExpand = document.getElementById('setLogExpand').checked;
             tasks.forEach(t => {
                 if(ownerColors[t.owner]) t.color = ownerColors[t.owner];
             });
-            
             applyLogBtnStyle();
             saveData();
-            setupCombobox('category', globalCategories);
-            setupCombobox('owner', ownerColors);
-            setupCombobox('qaCategory', globalCategories);
-            setupCombobox('qaOwner', ownerColors);
-            renderFilterButtons();
-            
-            if(currentOwnerFilter !== 'all' && !ownerColors[currentOwnerFilter]) currentOwnerFilter = 'all';
-            filterByOwner(currentOwnerFilter);
-            
+            buildDynamicFilters();
+            renderApp();
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                renderSmartLogForm();
+            }
             closeSettings();
-            showToast('全局设置已保存并同步');
-        };
+            showToast('设置已保存');
+        }
+
+        function buildDynamicFilters() {
+            const container = document.getElementById('dynamicFilterContainer');
+            container.innerHTML = '';
+            ownersOrder.forEach(owner => {
+                const btn = document.createElement('button');
+                btn.id = 'btnFilter' + owner;
+                btn.className = 'px-3 py-1 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 transition-all';
+                btn.textContent = owner;
+                btn.onclick = () => filterByOwner(owner);
+                container.appendChild(btn);
+            });
+            filterByOwner(currentOwnerFilter);
+        }
 
         window.filterByOwner = function(owner) {
             currentOwnerFilter = owner;
             const activeClass = ['bg-white', 'shadow-sm', 'text-gray-800'];
             const inactiveClass = ['text-gray-500', 'bg-transparent', 'shadow-none'];
             
-            const btns = document.getElementById('filterButtonGroup').querySelectorAll('button');
-            btns.forEach(btn => {
-                btn.classList.remove(...activeClass, ...inactiveClass);
-                if (btn.id === 'btnFilter' + owner.replace(/\s+/g, '') || (owner==='all' && btn.id==='btnFilterAll')) {
+            const allBtn = document.getElementById('btnFilterAll');
+            if (owner === 'all') {
+                allBtn.classList.remove(...inactiveClass);
+                allBtn.classList.add(...activeClass);
+            } else {
+                allBtn.classList.remove(...activeClass);
+                allBtn.classList.add(...inactiveClass);
+            }
+            
+            ownersOrder.forEach(o => {
+                const btn = document.getElementById('btnFilter' + o);
+                if(!btn) return;
+                if (o === owner) {
+                    btn.classList.remove(...inactiveClass);
                     btn.classList.add(...activeClass);
                 } else {
+                    btn.classList.remove(...activeClass);
                     btn.classList.add(...inactiveClass);
                 }
             });
-            
             renderApp();
-            renderLogs();
-            renderSmartLogForm();
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                renderLogs();
+                renderSmartLogForm();
+            }
+        };
+
+        window.handleSearch = function(val) {
+            searchQuery = val.trim().toLowerCase();
+            renderApp();
         };
 
         window.changeLogDate = function(val) {
@@ -701,17 +600,12 @@
         };
 
         async function generateTwoDaySummaryImage() {
-            showToast('正在排版并生成图片...', 'loading');
-            const parts = todayStr.split('-');
-            const now = new Date(parts[0], parts[1] - 1, parts[2]);
-            const tomorrow = new Date(now);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            const tomorrowStr = formatDate(tomorrow);
+            showToast('正在排版...', 'loading');
+            const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             const dueToday = [];
             const activeToday = [];
             const startingTomorrow = [];
             
-            const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             displayTasks.filter(t => !t.completed).forEach(t => {
                 if (t.end === todayStr && t.start <= todayStr) {
                     dueToday.push(t);
@@ -721,14 +615,11 @@
                     startingTomorrow.push(t);
                 }
             });
-
-         const wrapper = document.createElement('div');
+            
+            const wrapper = document.createElement('div');
             wrapper.style.position = 'absolute';
             wrapper.style.left = '-9999px';
-            wrapper.style.top = '0';
-            wrapper.style.zIndex = '-9999';
             wrapper.className = 'w-[540px] bg-white p-5 rounded-2xl shadow-xl font-sans';
-            
             let html = `
                 <div class="border-b border-gray-100 pb-3 mb-4 flex justify-between items-end">
                     <div>
@@ -737,8 +628,7 @@
                     </div>
                 </div>
             `;
-
-           const renderBlock = (title, items, bgColor, borderColor, titleColor, emoji) => {
+            const renderBlock = (title, items, bgColor, borderColor, titleColor, emoji) => {
                 if (items.length === 0) return '';
                 let blockHtml = `
                     <div class="mb-4 ${bgColor} border ${borderColor} rounded-xl p-3 shadow-sm">
@@ -748,86 +638,71 @@
                 items.sort((a, b) => a.owner.localeCompare(b.owner) || new Date(a.start) - new Date(b.start)).forEach(t => {
                     let detailsHtml = '';
                     if (t.details && t.details.trim() !== '') {
-                        detailsHtml = `<div class="text-[11px] text-gray-500 mt-1.5 bg-gray-50/80 px-2 py-1.5 rounded break-all overflow-hidden task-details-rich">${t.details}</div>`;
+                        detailsHtml = `<div class="text-[11px] text-gray-500 mt-1.5 bg-gray-50/80 p-1.5 rounded border border-gray-100 whitespace-pre-wrap leading-relaxed">${t.details}</div>`;
                     }
                     blockHtml += `
-                        <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-sm flex justify-between items-start gap-2" style="border-left: 4px solid ${t.color};">
+                        <div class="bg-white p-3 rounded-xl border border-gray-200 shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex justify-between items-start gap-2 overflow-hidden" style="border-left: 4px solid ${t.color};">
                             <div class="flex-1 min-w-0 pl-1">
-                                <div class="text-[13px] font-bold text-gray-800 leading-normal py-[1px] break-words">${t.name}</div>
-                                <div class="flex items-center gap-1.5 mt-1">
-                                    <span class="text-[10px] font-medium text-gray-500">${t.category}</span>
-                                    <span class="text-[10px] text-gray-300 font-light">|</span>
+                                <div class="text-[13px] font-bold text-gray-800 leading-snug">${t.name}</div>
+                                <div class="flex items-center gap-2 mt-1">
                                     <span class="text-[10px] text-gray-400 font-medium">${t.start.substring(5)} ~ ${t.end.substring(5)}</span>
                                 </div>
                                 ${detailsHtml}
                             </div>
-                            <div class="text-[11px] font-bold text-gray-500 tracking-wider shrink-0 mt-[2px]">${t.owner}</div>
+                            <div class="text-[11px] font-bold text-gray-500 tracking-wider shrink-0 mt-0.5">
+                                ${t.owner}
+                            </div>
                         </div>
                     `;
                 });
                 blockHtml += `</div></div>`;
                 return blockHtml;
             };
-
-            html += renderBlock('今日截止', dueToday, 'bg-red-50', 'border-red-100', 'text-red-700', '🚨');
-            html += renderBlock('今日推进中', activeToday, 'bg-blue-50', 'border-blue-100', 'text-blue-700', '⏳');
-            html += renderBlock('明日开启', startingTomorrow, 'bg-gray-50', 'border-gray-200', 'text-gray-700', '🔜');
-            
+            html += renderBlock('今日截止', dueToday, 'bg-red-50/40', 'border-red-100', 'text-red-700', '🚨');
+            html += renderBlock('今日推进中', activeToday, 'bg-blue-50/40', 'border-blue-100', 'text-blue-700', '⏳');
+            html += renderBlock('明日开启', startingTomorrow, 'bg-gray-50/60', 'border-gray-200', 'text-gray-700', '🔜');
             if (dueToday.length === 0 && activeToday.length === 0 && startingTomorrow.length === 0) {
                 html += `<div class="text-center py-8 text-gray-400 text-sm bg-gray-50 rounded-xl border border-dashed border-gray-200">这两天没有安排任务哦~ 🎉</div>`;
             }
-            
             html += `
                 <div class="mt-3 pt-3 border-t border-gray-100 flex justify-between items-center">
                     <div class="text-[10px] text-gray-400 font-bold tracking-widest uppercase">GENERATED BY GANTT WORKSPACE</div>
                 </div>
             `;
-            
             wrapper.innerHTML = html;
             document.body.appendChild(wrapper);
-
             try {
                 const canvas = await html2canvas(wrapper, { scale: 2, useCORS: true, backgroundColor: '#ffffff', logging: false });
-                const dataUrl = canvas.toDataURL("image/png"); 
-                
-                const fallbackShowModal = () => {
-                    document.getElementById('generatedImg').src = dataUrl;
-                    document.getElementById('imageModal').classList.remove('hidden');
-                    document.getElementById('imageModalTitle').textContent = '图片已生成';
-                    document.getElementById('imageModalTip').classList.remove('hidden');
-                    resetImgTransform();
-                };
-
-                if (navigator.clipboard && navigator.clipboard.write) {
-                    canvas.toBlob(async (blob) => {
-                        try {
-                            const item = new ClipboardItem({ 'image/png': blob });
-                            await navigator.clipboard.write([item]);
-                            hideToast();
-                            setTimeout(() => showToast('细节卡片图已复制到剪贴板！'), 300);
-                        } catch (clipErr) {
-                            hideToast();
-                            fallbackShowModal(); 
-                        } finally {
-                            if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
-                        }
-                    });
-                } else {
-                    hideToast();
-                    fallbackShowModal();
-                    if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
-                }
+                canvas.toBlob(async (blob) => {
+                    try {
+                        const item = new ClipboardItem({ 'image/png': blob });
+                        await navigator.clipboard.write([item]);
+                        hideToast();
+                        setTimeout(() => showToast('卡片图已复制到剪贴板！'), 300);
+                    } catch(e) {
+                        hideToast();
+                        const dataUrl = canvas.toDataURL("image/png");
+                        document.getElementById('generatedImg').src = dataUrl;
+                        document.getElementById('imageModal').classList.remove('hidden');
+                    } finally {
+                        document.body.removeChild(wrapper);
+                    }
+                });
             } catch (e) {
                 hideToast();
-                setTimeout(() => showToast('生成图片失败，请检查浏览器兼容性', 'error'), 300);
-                if (document.body.contains(wrapper)) document.body.removeChild(wrapper);
+                setTimeout(() => showToast('生成图片失败', 'error'), 300);
+                document.body.removeChild(wrapper);
             }
         }
 
-        function enforceOwnerColors() {
+        function ensureOwnersExist() {
             tasks.forEach(t => {
-                if (t.owner === '共同') t.owner = '公共'; 
-                if (ownerColors[t.owner]) t.color = ownerColors[t.owner];
+                if (t.owner === '公共' || t.owner === '共同') t.owner = '公共'; 
+                if (!ownersOrder.includes(t.owner)) {
+                    ownersOrder.push(t.owner);
+                }
+                if (!ownerColors[t.owner]) ownerColors[t.owner] = '#64748b';
+                t.color = ownerColors[t.owner];
             });
         }
 
@@ -836,38 +711,28 @@
             status.classList.remove('hidden');
             status.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400 spinner"></span> 获取中...`;
             try {
-                const response = await fetch('/api/sync');
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}/latest`, {
+                    headers: { 'X-Access-Key': cloudConfig.apiKey }
+                });
                 const result = await response.json();
                 if (result.record) {
                     if (result.record.tasks && result.record.tasks.length > 0) tasks = result.record.tasks;
                     else tasks = initialExtractedData;
                     if (result.record.logs) dailyLogs = result.record.logs;
+                    if (result.record.ownersOrder) ownersOrder = result.record.ownersOrder;
+                    if (result.record.ownerColors) Object.assign(ownerColors, result.record.ownerColors);
                 } else {
                     tasks = initialExtractedData;
                     pushDataToCloud(); 
                 }
-                enforceOwnerColors(); 
-                tasks.forEach(t => { if(t.category) globalCategories.add(t.category); });
-                setupCombobox('category', globalCategories);
-                setupCombobox('qaCategory', globalCategories);
-                
-                let existingOwners = new Set();
-                tasks.forEach(t => { if(t.owner) existingOwners.add(t.owner); });
-                existingOwners.forEach(o => { if(!ownerColors[o]) ownerColors[o] = '#94a3b8'; });
-                setupCombobox('owner', ownerColors);
-                setupCombobox('qaOwner', ownerColors);
-                renderFilterButtons();
-                
+                ensureOwnersExist();
+                buildDynamicFilters();
                 renderApp();
                 renderLogs();
-                renderSmartLogForm();
-
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
-                
-                if (autoShowSummary && !window.hasAutoShownSummary) {
-                    window.hasAutoShownSummary = true;
-                    setTimeout(generateTwoDaySummaryImage, 500);
+                if(!document.getElementById('logPageSection').classList.contains('hidden')) {
+                    renderSmartLogForm();
                 }
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
             } catch (error) {
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> 拉取失败`;
             }
@@ -878,11 +743,11 @@
             status.classList.remove('hidden');
             status.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-400 spinner"></span> 保存中...`;
             try {
-                enforceOwnerColors();
-                const response = await fetch('/api/sync', {
+                ensureOwnersExist();
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${cloudConfig.binId}`, {
                     method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tasks: tasks, logs: dailyLogs })
+                    headers: { 'Content-Type': 'application/json', 'X-Access-Key': cloudConfig.apiKey },
+                    body: JSON.stringify({ tasks: tasks, logs: dailyLogs, ownersOrder: ownersOrder, ownerColors: ownerColors })
                 });
                 if(response.ok) {
                     status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> 已同步`;
@@ -893,93 +758,56 @@
         }
 
         function saveData() {
-            enforceOwnerColors();
+            ensureOwnersExist();
             pushDataToCloud();
         }
 
         document.getElementById('taskForm').addEventListener('submit', function(e) {
             e.preventDefault();
             const taskName = document.getElementById('taskName').value.trim();
-            let taskDetails = document.getElementById('taskDetails').innerHTML.trim();
-            if(taskDetails === '<br>') taskDetails = '';
-            taskDetails = makeLinksClickable(taskDetails);
-            const category = document.getElementById('category').value.trim();
+            const taskDetails = document.getElementById('taskDetails').value.trim();
             let owner = document.getElementById('owner').value.trim();
             if (owner === '共同') owner = '公共';
-            const color = ownerColors[owner] || document.getElementById('taskColor').value;
+            
+            if (!ownersOrder.includes(owner)) {
+                ownersOrder.push(owner);
+                ownerColors[owner] = '#64748b'; 
+                buildDynamicFilters();
+            }
+            const color = ownerColors[owner];
             const start = document.getElementById('startDate').value;
             const end = document.getElementById('endDate').value;
+            
             if (new Date(start) > new Date(end)) {
-                showToast('开始日期不能晚于结束日期！', 'error'); return;
+                showToast('开始不能晚于结束', 'error'); return;
             }
-            tasks.push({ id: Date.now().toString(), name: taskName, details: taskDetails, category: category, owner: owner, color: color, start: start, end: end, completed: false });
-            globalCategories.add(category);
-            if (!ownerColors[owner]) {
-                ownerColors[owner] = color;
-                renderFilterButtons();
-            }
-            setupCombobox('category', globalCategories);
-            setupCombobox('owner', ownerColors);
-            setupCombobox('qaCategory', globalCategories);
-            setupCombobox('qaOwner', ownerColors);
+            tasks.push({ id: Date.now().toString(), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false });
             renderApp();
             saveData();
+            
             document.getElementById('taskName').value = '';
-            document.getElementById('taskDetails').innerHTML = '';
+            document.getElementById('taskDetails').value = '';
             document.getElementById('taskName').focus();
             showToast('任务添加成功');
-            renderSmartLogForm();
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
         });
 
-        document.getElementById('quickAddForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            const taskName = document.getElementById('qaName').value.trim();
-            let taskDetails = document.getElementById('qaDetails').innerHTML.trim();
-            if(taskDetails === '<br>') taskDetails = '';
-            taskDetails = makeLinksClickable(taskDetails);
-            const category = document.getElementById('qaCategory').value.trim();
-            let owner = document.getElementById('qaOwner').value.trim();
-            if (owner === '共同') owner = '公共';
-            const color = ownerColors[owner] || document.getElementById('qaColor').value;
-            const start = document.getElementById('qaStartDate').value;
-            const end = document.getElementById('qaEndDate').value;
-            if (new Date(start) > new Date(end)) {
-                showToast('开始日期不能晚于结束日期！', 'error'); return;
-            }
-            tasks.push({ id: Date.now().toString(), name: taskName, details: taskDetails, category: category, owner: owner, color: color, start: start, end: end, completed: false });
-            globalCategories.add(category);
-            if (!ownerColors[owner]) {
-                ownerColors[owner] = color;
-                renderFilterButtons();
-            }
-            setupCombobox('category', globalCategories);
-            setupCombobox('owner', ownerColors);
-            setupCombobox('qaCategory', globalCategories);
-            setupCombobox('qaOwner', ownerColors);
-            renderApp();
-            saveData();
-            document.getElementById('quickAddModal').classList.add('hidden');
-            showToast('排期快捷添加成功');
-            renderSmartLogForm();
-        });
-
-        window.openEditModal = function(taskId) {
+        function openEditModal(taskId) {
             const task = tasks.find(t => t.id === taskId);
             if (!task) return;
             document.getElementById('editTaskId').value = task.id;
             document.getElementById('editTaskName').value = task.name;
-            document.getElementById('editTaskDetails').innerHTML = task.details || '';
-            document.getElementById('editCategory').value = task.category;
+            document.getElementById('editTaskDetails').value = task.details || '';
             document.getElementById('editOwner').value = task.owner;
             document.getElementById('editStartDate').value = task.start;
             document.getElementById('editEndDate').value = task.end;
             document.getElementById('editCompleted').checked = task.completed;
             document.getElementById('editModal').classList.remove('hidden');
-        };
+        }
 
-        window.closeEditModal = function() {
+        function closeEditModal() {
             document.getElementById('editModal').classList.add('hidden');
-        };
+        }
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -989,42 +817,28 @@
                 const s = document.getElementById('editStartDate').value;
                 const en = document.getElementById('editEndDate').value;
                 if (new Date(s) > new Date(en)) {
-                    showToast('开始日期不能晚于结束日期', 'error'); return;
+                    showToast('开始不能晚于结束', 'error'); return;
                 }
-                const wasCompleted = task.completed;
-                const isNowCompleted = document.getElementById('editCompleted').checked;
-                
                 task.name = document.getElementById('editTaskName').value.trim();
-                let det = document.getElementById('editTaskDetails').innerHTML.trim();
-                if(det === '<br>') det = '';
-                task.details = makeLinksClickable(det);
-                task.category = document.getElementById('editCategory').value.trim();
+                task.details = document.getElementById('editTaskDetails').value.trim();
                 let owner = document.getElementById('editOwner').value.trim();
                 if (owner === '共同') owner = '公共';
+                if (!ownersOrder.includes(owner)) {
+                    ownersOrder.push(owner);
+                    ownerColors[owner] = '#64748b';
+                    buildDynamicFilters();
+                }
                 task.owner = owner;
+                task.color = ownerColors[owner];
                 task.start = s;
                 task.end = en;
+                task.completed = document.getElementById('editCompleted').checked;
                 
-                globalCategories.add(task.category);
-                if (!ownerColors[owner]) {
-                    ownerColors[owner] = '#94a3b8';
-                    renderFilterButtons();
-                }
-
-                if (!wasCompleted && isNowCompleted) {
-                    task.completed = false;
-                    saveData();
-                    renderApp();
-                    closeEditModal();
-                    toggleComplete(task.id); 
-                } else {
-                    task.completed = isNowCompleted;
-                    saveData();
-                    renderApp();
-                    closeEditModal();
-                    showToast('修改成功');
-                    renderSmartLogForm();
-                }
+                saveData();
+                renderApp();
+                closeEditModal();
+                showToast('修改成功');
+                if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
             }
         });
 
@@ -1057,7 +871,7 @@
                         saveData();
                         renderApp();
                         showToast('日期已更新');
-                        renderSmartLogForm();
+                        if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
                     } else renderApp();
                 }
             } else renderApp();
@@ -1069,245 +883,293 @@
             renderApp();
             saveData();
             showToast('任务已删除');
-            renderSmartLogForm();
+            if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
         };
 
         window.toggleComplete = function(id) {
             const task = tasks.find(t => t.id === id);
             if (task) {
-                if(task.completed){
-                    task.completed = false;
-                    renderApp();
-                    saveData();
-                    renderSmartLogForm();
-                    renderLogs();
-                } else {
-                    document.getElementById('quickCompleteTaskId').value = task.id;
-                    document.getElementById('quickCompleteTaskName').textContent = task.name;
-                    document.getElementById('quickCompleteComp').value = '';
-                    document.getElementById('quickCompleteRich').innerHTML = '';
-                    document.getElementById('quickCompleteModal').classList.remove('hidden');
-                    renderApp();
-                }
-            }
-        };
-
-        window.cancelQuickComplete = function() {
-            document.getElementById('quickCompleteModal').classList.add('hidden');
-        };
-
-        window.saveQuickComplete = function() {
-            const id = document.getElementById('quickCompleteTaskId').value;
-            const task = tasks.find(t => t.id === id);
-            if (task) {
-                task.completed = true;
-                const compVal = document.getElementById('quickCompleteComp').value.trim();
-                let richHtml = document.getElementById('quickCompleteRich').innerHTML.trim();
-                richHtml = makeLinksClickable(richHtml);
-                
-                let contentStr = `• 【${task.name}】 [已完成]`;
-                if (compVal) contentStr += ` 进度: ${compVal}。`;
-                if (richHtml && richHtml !== '<br>') {
-                    contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${richHtml}</div>`;
-                }
-                
-                let existingLog = dailyLogs.find(l => l.owner === task.owner && l.date === todayStr);
-                if (existingLog) {
-                    existingLog.content += '\n\n' + contentStr;
-                } else {
-                    dailyLogs.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), owner: task.owner, date: todayStr, content: contentStr });
-                }
-                
-                document.getElementById('quickCompleteModal').classList.add('hidden');
+                task.completed = !task.completed;
                 renderApp();
                 saveData();
-                renderLogs();
-                renderSmartLogForm();
-                showToast('任务已完成并记录！');
+                if(!document.getElementById('logPageSection').classList.contains('hidden')) renderSmartLogForm();
             }
         };
 
         function renderApp() {
-            document.getElementById('startDate').value = todayStr;
-            document.getElementById('endDate').value = todayStr;
-            renderTaskPool();
-            renderGantt();
+            let displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
+            if(searchQuery) {
+                displayTasks = displayTasks.filter(t => t.name.toLowerCase().includes(searchQuery) || (t.details && t.details.toLowerCase().includes(searchQuery)));
+            }
+            renderTaskPool(displayTasks);
+            renderGantt(displayTasks);
+            renderKanban(displayTasks);
         }
 
-        function renderTaskPool() {
+        function renderTaskPool(displayTasks) {
             const pool = document.getElementById('taskPoolContainer');
-            const empty = document.getElementById('poolEmptyState');
-            const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             document.getElementById('taskCountBadge').textContent = `共 ${displayTasks.length} 项`;
+            
             if (displayTasks.length === 0) {
-                pool.innerHTML = '';
-                pool.appendChild(empty);
+                pool.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-gray-400 text-sm">暂无任务或无匹配结果</div>';
                 return;
             }
+            
             pool.innerHTML = '';
-            const grouped = groupBy(displayTasks, 'category');
-            for (const cat in grouped) {
+            const activeTasks = displayTasks.filter(t => !t.completed);
+            const completedTasks = displayTasks.filter(t => t.completed);
+
+            ownersOrder.forEach(owner => {
+                const groupTasks = activeTasks.filter(t => t.owner === owner);
+                if(groupTasks.length > 0) {
+                    const groupDiv = document.createElement('div');
+                    groupDiv.className = 'mb-6';
+                    const header = document.createElement('div');
+                    header.className = 'text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pl-1 flex items-center gap-2 border-b border-gray-100 pb-2';
+                    header.innerHTML = `<span class="w-2 h-2 rounded-full" style="background-color: ${ownerColors[owner]}"></span> ${owner} 的活跃任务`;
+                    groupDiv.appendChild(header);
+                    
+                    groupTasks.forEach(task => {
+                        groupDiv.appendChild(createTaskPoolItem(task));
+                    });
+                    pool.appendChild(groupDiv);
+                }
+            });
+            
+            const orphans = activeTasks.filter(t => !ownersOrder.includes(t.owner));
+            if(orphans.length > 0) {
                 const groupDiv = document.createElement('div');
                 groupDiv.className = 'mb-6';
                 const header = document.createElement('div');
                 header.className = 'text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 pl-1 flex items-center gap-2 border-b border-gray-100 pb-2';
-                header.innerHTML = `<span class="w-1.5 h-1.5 rounded-full bg-indigo-400"></span> ${cat}`;
+                header.innerHTML = `<span class="w-2 h-2 rounded-full bg-gray-400"></span> 其他人员任务`;
                 groupDiv.appendChild(header);
-                grouped[cat].forEach(task => {
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = `group flex items-start gap-3 p-3.5 mb-2.5 rounded-xl border transition-all duration-200 ${task.completed ? 'bg-gray-50/80 border-gray-100 opacity-60 grayscale' : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-[0_4px_12px_rgba(0,0,0,0.03)]'}`;
-                    const checkbox = document.createElement('input');
-                    checkbox.type = 'checkbox';
-                    checkbox.checked = task.completed;
-                    checkbox.className = "mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 transition-all";
-                    checkbox.onchange = () => toggleComplete(task.id);
-                    const info = document.createElement('div');
-                    info.className = 'flex-1 min-w-0 cursor-pointer';
-                    info.onclick = () => openEditModal(task.id);
-                    let detailsHtml = '';
-                    if (task.details) {
-                        let pureText = task.details.replace(/<[^>]*>?/gm, ' ').trim();
-                        if(pureText.length > 0) {
-                            detailsHtml = `<div class="text-[11px] text-gray-400 mt-1.5 line-clamp-1 break-all">${pureText}</div>`;
-                        }
-                    }
-                    info.innerHTML = `
-                        <div class="text-[13px] font-semibold truncate ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}">${task.name}</div>
-                        ${detailsHtml}
-                        <div class="text-[11px] text-gray-500 flex items-center gap-2.5 mt-2 font-medium">
-                            <span class="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-gray-100 border border-gray-200"><div class="w-2 h-2 rounded-full shadow-sm" style="background-color: ${task.color}"></div> ${task.owner}</span>
-                            <span class="flex items-center gap-1"><svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${task.start.substring(5)} → ${task.end.substring(5)}</span>
-                        </div>
-                    `;
-                    const delBtn = document.createElement('button');
-                    delBtn.className = 'p-2 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100';
-                    delBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
-                    delBtn.onclick = () => deleteTask(task.id);
-                    itemDiv.appendChild(checkbox);
-                    itemDiv.appendChild(info);
-                    itemDiv.appendChild(delBtn);
-                    groupDiv.appendChild(itemDiv);
-                });
+                orphans.forEach(task => groupDiv.appendChild(createTaskPoolItem(task)));
                 pool.appendChild(groupDiv);
+            }
+
+            if(completedTasks.length > 0) {
+                const details = document.createElement('details');
+                details.className = 'group mb-4 bg-gray-50 rounded-xl border border-gray-200 overflow-hidden';
+                details.innerHTML = `
+                    <summary class="px-4 py-3 text-xs font-bold text-gray-500 cursor-pointer flex items-center justify-between hover:bg-gray-100 transition-colors list-none outline-none">
+                        <span>已完成任务 (${completedTasks.length} 项)</span>
+                        <svg class="w-4 h-4 text-gray-400 transition-transform group-open:rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </summary>
+                    <div class="p-3 pt-0 flex flex-col gap-2"></div>
+                `;
+                const container = details.querySelector('div');
+                completedTasks.forEach(task => container.appendChild(createTaskPoolItem(task)));
+                pool.appendChild(details);
             }
         }
 
-        function renderGantt() {
-            const container = document.getElementById('ganttContainer');
-            const emptyState = document.getElementById('ganttEmptyState');
-            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
-            const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
-            if (displayTasks.length === 0) {
+        function createTaskPoolItem(task) {
+            const itemDiv = document.createElement('div');
+            itemDiv.className = `group flex items-start gap-3 p-3 mb-2 rounded-xl border transition-all duration-200 ${task.completed ? 'bg-white opacity-70 grayscale' : 'bg-white border-gray-200 hover:border-indigo-300 hover:shadow-sm'}`;
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = task.completed;
+            checkbox.className = "mt-0.5 w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 transition-all";
+            checkbox.onchange = () => toggleComplete(task.id);
+            const info = document.createElement('div');
+            info.className = 'flex-1 min-w-0 cursor-pointer';
+            info.onclick = () => openEditModal(task.id);
+            let detailsHtml = '';
+            if (task.details) {
+                detailsHtml = `<div class="text-[11px] text-gray-400 mt-1 line-clamp-1">${task.details.replace(/\n/g, ' ')}</div>`;
+            }
+            info.innerHTML = `
+                <div class="text-[13px] font-semibold truncate ${task.completed ? 'line-through text-gray-400' : 'text-gray-800'}">${task.name}</div>
+                ${detailsHtml}
+                <div class="text-[11px] text-gray-500 flex items-center gap-2.5 mt-1.5 font-medium">
+                    <span class="flex items-center gap-1"><svg class="w-3 h-3 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg> ${task.start.substring(5)} → ${task.end.substring(5)}</span>
+                </div>
+            `;
+            const delBtn = document.createElement('button');
+            delBtn.className = 'p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors opacity-0 group-hover:opacity-100';
+            delBtn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>`;
+            delBtn.onclick = () => deleteTask(task.id);
+            itemDiv.appendChild(checkbox);
+            itemDiv.appendChild(info);
+            itemDiv.appendChild(delBtn);
+            return itemDiv;
+        }
+
+        function renderKanban(displayTasks) {
+            const activeTasks = displayTasks.filter(t => !t.completed);
+            
+            const overdue = [];
+            const today = [];
+            const tomorrow = [];
+            const next7 = [];
+            const later = [];
+            
+            activeTasks.forEach(t => {
+                if (t.end < todayStr) overdue.push(t);
+                else if (t.end === todayStr) today.push(t);
+                else if (t.end === tomorrowStr) tomorrow.push(t);
+                else if (t.end <= formatDate(new Date(tDate.getTime() + 6*24*60*60*1000))) next7.push(t);
+                else later.push(t);
+            });
+            
+            document.getElementById('countOverdue').textContent = overdue.length;
+            document.getElementById('countToday').textContent = today.length;
+            document.getElementById('countTomorrow').textContent = tomorrow.length;
+            document.getElementById('countNext7').textContent = next7.length;
+            document.getElementById('countLater').textContent = later.length;
+            
+            const renderCards = (tasksArr, containerId) => {
+                const container = document.getElementById(containerId);
                 container.innerHTML = '';
-                container.appendChild(emptyState);
-                dateRangeDisplay.textContent = '等待添加任务...';
+                tasksArr.sort((a,b) => (ownersOrder.indexOf(a.owner) - ownersOrder.indexOf(b.owner)) || new Date(a.start) - new Date(b.start)).forEach(task => {
+                    const card = document.createElement('div');
+                    card.className = 'bg-white p-3 rounded-xl border border-gray-200 shadow-[0_1px_3px_rgba(0,0,0,0.05)] cursor-grab active:cursor-grabbing hover:border-indigo-300 transition-colors';
+                    card.draggable = true;
+                    card.style.borderLeft = `4px solid ${task.color}`;
+                    card.ondragstart = (e) => {
+                        e.dataTransfer.setData('text/plain', task.id);
+                        e.dataTransfer.effectAllowed = 'move';
+                        setTimeout(() => card.classList.add('opacity-50'), 0);
+                    };
+                    card.ondragend = () => card.classList.remove('opacity-50');
+                    card.ondblclick = () => openEditModal(task.id);
+                    
+                    card.innerHTML = `
+                        <div class="text-[13px] font-bold text-gray-800 leading-snug mb-1.5">${task.name}</div>
+                        ${task.details ? `<div class="text-[11px] text-gray-500 line-clamp-2 mb-2 leading-relaxed bg-gray-50 p-1 rounded">${task.details}</div>` : ''}
+                        <div class="flex items-center justify-between mt-auto pt-1">
+                            <span class="text-[10px] font-bold text-gray-600">${task.owner}</span>
+                            <span class="text-[10px] text-gray-400 font-medium">${task.start.substring(5)} 起</span>
+                        </div>
+                    `;
+                    container.appendChild(card);
+                });
+            };
+            
+            renderCards(overdue, 'kanbanOverdue');
+            renderCards(today, 'kanbanToday');
+            renderCards(tomorrow, 'kanbanTomorrow');
+            renderCards(next7, 'kanbanNext7');
+            renderCards(later, 'kanbanLater');
+        }
+
+        window.handleDragOverKanban = function(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            e.currentTarget.classList.add('drag-over');
+        }
+        window.handleDragLeaveKanban = function(e) {
+            e.currentTarget.classList.remove('drag-over');
+        }
+        window.handleDropKanban = function(e, type) {
+            e.preventDefault();
+            e.currentTarget.classList.remove('drag-over');
+            const taskId = e.dataTransfer.getData('text/plain');
+            const task = tasks.find(t => t.id === taskId);
+            if(task) {
+                let newEnd = task.end;
+                if(type === 'overdue') newEnd = yesterdayStr;
+                else if(type === 'today') newEnd = todayStr;
+                else if(type === 'tomorrow') newEnd = tomorrowStr;
+                else if(type === 'next7') {
+                    const d = new Date(todayStr);
+                    d.setDate(d.getDate() + 3);
+                    newEnd = formatDate(d);
+                } else if(type === 'later') {
+                    const d = new Date(todayStr);
+                    d.setDate(d.getDate() + 8);
+                    newEnd = formatDate(d);
+                }
+                
+                task.end = newEnd;
+                if(new Date(task.start) > new Date(task.end)) {
+                    task.start = task.end;
+                }
+                saveData();
+                renderApp();
+                showToast('已更新截止日期');
+            }
+        }
+
+        function renderGantt(displayTasks) {
+            const container = document.getElementById('ganttContainer');
+            const dateRangeDisplay = document.getElementById('dateRangeDisplay');
+            if (displayTasks.length === 0) {
+                container.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-gray-400"><svg class="w-12 h-12 mb-3 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg><p class="text-sm">暂无任务或无匹配结果</p></div>';
+                dateRangeDisplay.textContent = '暂无排期';
                 return;
             }
             
-            const parts = todayStr.split('-');
-            const todayDateObj = new Date(parts[0], parts[1] - 1, parts[2]);
-            const yesterdayDateObj = new Date(todayDateObj);
-            yesterdayDateObj.setDate(yesterdayDateObj.getDate() - 1);
-            
-            let realMinDate = new Date(displayTasks[0].start.split('-')[0], displayTasks[0].start.split('-')[1] - 1, displayTasks[0].start.split('-')[2]);
-            let maxDate = new Date(displayTasks[0].end.split('-')[0], displayTasks[0].end.split('-')[1] - 1, displayTasks[0].end.split('-')[2]);
+            let minDate = new Date(displayTasks[0].start.replace(/-/g, '/'));
+            let maxDate = new Date(displayTasks[0].end.replace(/-/g, '/'));
             displayTasks.forEach(t => {
-                const s = new Date(t.start.split('-')[0], t.start.split('-')[1] - 1, t.start.split('-')[2]);
-                const e = new Date(t.end.split('-')[0], t.end.split('-')[1] - 1, t.end.split('-')[2]);
-                if (s < realMinDate) realMinDate = s;
+                const s = new Date(t.start.replace(/-/g, '/'));
+                const e = new Date(t.end.replace(/-/g, '/'));
+                if (s < minDate) minDate = s;
                 if (e > maxDate) maxDate = e;
             });
-            
-            let renderMinDate = new Date(realMinDate);
-            let hasEarlyTasks = false;
-            if (realMinDate < yesterdayDateObj) {
-                hasEarlyTasks = true;
-                if (!isGanttExpanded) {
-                    renderMinDate = new Date(yesterdayDateObj);
-                }
-            }
-            
-            renderMinDate.setDate(renderMinDate.getDate() - 1);
+            minDate.setDate(minDate.getDate() - 1);
             maxDate.setDate(maxDate.getDate() + 3);
+            const totalDays = Math.round((maxDate - minDate) / (1000 * 60 * 60 * 24)) + 1;
+            dateRangeDisplay.textContent = `${formatDate(minDate)} 至 ${formatDate(maxDate)}`;
             
-            dateRangeDisplay.innerHTML = '';
-            const rangeText = document.createElement('span');
-            rangeText.textContent = `${formatDate(renderMinDate)} 至 ${formatDate(maxDate)}`;
-            dateRangeDisplay.appendChild(rangeText);
-            
-            const totalDays = Math.round((maxDate - renderMinDate) / (1000 * 60 * 60 * 24)) + 1;
-            const groupedTasks = groupBy(displayTasks, 'category');
             const wrapper = document.createElement('div');
             wrapper.style.setProperty('--total-days', totalDays);
             wrapper.className = 'gantt-grid min-w-max pb-4';
             
             const corner = document.createElement('div');
-            corner.className = 'gantt-corner p-3 border-b border-r border-gray-200 text-xs font-bold text-gray-500 tracking-wider flex items-end uppercase relative';
+            corner.className = 'gantt-corner p-3 border-b border-r border-gray-200 text-xs font-bold text-gray-500 tracking-wider flex items-end uppercase';
             corner.style.gridColumn = '1';
-            corner.style.zIndex = '40';
-            corner.innerHTML = `<span>任务排期 (模块)</span>`;
-
-            if (hasEarlyTasks) {
-                const toggleBtn = document.createElement('button');
-                toggleBtn.className = "absolute -right-3 top-1/2 -translate-y-1/2 w-6 h-6 bg-white border border-gray-200 rounded-full shadow-md text-indigo-500 hover:text-indigo-600 flex items-center justify-center cursor-pointer z-[50] transition-transform hover:scale-110";
-                toggleBtn.innerHTML = isGanttExpanded 
-                    ? `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>` 
-                    : `<svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"></path></svg>`;
-                toggleBtn.title = isGanttExpanded ? "收起较早日期" : "展开历史日期";
-                toggleBtn.onclick = (e) => {
-                    e.stopPropagation();
-                    isGanttExpanded = !isGanttExpanded;
-                    renderGantt();
-                };
-                corner.appendChild(toggleBtn);
-            }
+            corner.textContent = '人员 / 任务排期';
             wrapper.appendChild(corner);
 
-            let currentDay = new Date(renderMinDate);
+            let currentDay = new Date(minDate);
             for (let i = 0; i < totalDays; i++) {
                 const dayHeader = document.createElement('div');
                 const currentDateStr = formatDate(currentDay);
                 const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
                 const isToday = currentDateStr === todayStr;
                 dayHeader.className = `gantt-header p-2 border-b border-r border-gray-200 text-center text-[12px] flex flex-col justify-end transition-colors ${isToday ? 'relative z-10' : (isWeekend ? 'bg-gray-50/80 text-gray-400' : 'bg-white text-gray-500')}`;
-                dayHeader.setAttribute('data-date', currentDateStr);
                 
                 if (isToday) {
                     dayHeader.style.backgroundColor = todayBgColor;
                     dayHeader.style.color = getTextColor(todayBgColor);
                 }
-
                 const dText = document.createElement('span');
-                dText.className = 'font-semibold pointer-events-none';
+                dText.className = 'font-semibold';
                 dText.textContent = `${currentDay.getMonth() + 1}月${currentDay.getDate()}日`;
                 dayHeader.appendChild(dText);
                 wrapper.appendChild(dayHeader);
                 currentDay.setDate(currentDay.getDate() + 1);
             }
             
-            for (const category in groupedTasks) {
-                const catRowLabel = document.createElement('div');
-                catRowLabel.className = 'gantt-col-sticky p-2 pl-4 border-b border-gray-200 bg-gray-100 flex items-center shadow-[0_1px_0_0_#e5e7eb]';
-                catRowLabel.style.gridColumn = '1';
-                catRowLabel.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700">${category}</span>`;
-                wrapper.appendChild(catRowLabel);
+            const displayOwners = [...ownersOrder];
+            displayTasks.forEach(t => {
+                if(!displayOwners.includes(t.owner)) displayOwners.push(t.owner);
+            });
 
-                const catRowTrack = document.createElement('div');
-                catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50';
-                catRowTrack.style.gridColumn = '2 / -1';
-                wrapper.appendChild(catRowTrack);
+            displayOwners.forEach(owner => {
+                const ownerTasks = displayTasks.filter(t => t.owner === owner);
+                if(ownerTasks.length === 0) return;
+                
+                const ownerRowLabel = document.createElement('div');
+                ownerRowLabel.className = 'gantt-col-sticky p-2 pl-4 border-b border-gray-200 bg-gray-100 flex items-center shadow-[0_1px_0_0_#e5e7eb]';
+                ownerRowLabel.style.gridColumn = '1';
+                ownerRowLabel.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold" style="color: ${ownerColors[owner] || '#4b5563'}">${owner}</span>`;
+                wrapper.appendChild(ownerRowLabel);
 
-                groupedTasks[category].forEach(task => {
+                const ownerRowTrack = document.createElement('div');
+                ownerRowTrack.className = 'border-b border-gray-200 bg-gray-100/50';
+                ownerRowTrack.style.gridColumn = '2 / -1';
+                wrapper.appendChild(ownerRowTrack);
+
+                ownerTasks.forEach(task => {
                     const taskLabel = document.createElement('div');
                     taskLabel.className = `gantt-task-sticky p-2.5 pl-6 border-b border-r border-gray-200 flex flex-col justify-center transition-colors ${task.completed ? 'bg-gray-50 opacity-60' : 'bg-white'}`;
                     taskLabel.style.gridColumn = '1';
-                    let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
-                    let detailsTooltip = pureText ? `title="${pureText}"` : '';
-                    taskLabel.innerHTML = `
-                        <div class="text-[13px] truncate w-[220px] ${task.completed ? 'text-gray-400 line-through' : 'text-gray-700'}" ${detailsTooltip}>
-                            ${task.name}
-                        </div>
-                    `;
+                    let detailsTooltip = task.details ? `title="${task.details.replace(/"/g, '&quot;')}"` : '';
+                    taskLabel.innerHTML = `<div class="text-[13px] truncate w-[220px] ${task.completed ? 'text-gray-400 line-through' : 'text-gray-700'}" ${detailsTooltip}>${task.name}</div>`;
                     wrapper.appendChild(taskLabel);
                     
                     const tParts = task.start.split('-');
@@ -1315,28 +1177,18 @@
                     const eParts = task.end.split('-');
                     const taskEnd = new Date(eParts[0], eParts[1] - 1, eParts[2]);
                     
-                    let startIndex = Math.round((taskStart - renderMinDate) / (1000 * 60 * 60 * 24));
-                    let hiddenDays = 0;
-                    if(startIndex < 0){
-                        hiddenDays = -startIndex;
-                        startIndex = 0;
-                    }
-                    
-                    const fullDuration = Math.round((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1;
-                    const visibleDuration = fullDuration - hiddenDays;
-                    
-                    currentDay = new Date(renderMinDate);
+                    const startIndex = Math.max(0, Math.round((taskStart - minDate) / (1000 * 60 * 60 * 24)));
+                    const duration = Math.round((taskEnd - taskStart) / (1000 * 60 * 60 * 24)) + 1;
+                    currentDay = new Date(minDate);
                     
                     let pastPercentage = 0;
-                    if (!task.completed && visibleDuration > 0) {
+                    if (!task.completed) {
                         const parts = todayStr.split('-');
                         const todayD = new Date(parts[0], parts[1] - 1, parts[2]);
-                        const visibleStart = new Date(taskStart);
-                        if(hiddenDays > 0) visibleStart.setDate(visibleStart.getDate() + hiddenDays);
-                        let visiblePassedDays = Math.round((todayD - visibleStart) / (1000 * 60 * 60 * 24));
-                        if (visiblePassedDays > 0) {
-                            if (visiblePassedDays > visibleDuration) visiblePassedDays = visibleDuration;
-                            pastPercentage = (visiblePassedDays / visibleDuration) * 100;
+                        let pDays = Math.round((todayD - taskStart) / (1000 * 60 * 60 * 24));
+                        if (pDays > 0) {
+                            if (pDays > duration) pDays = duration;
+                            pastPercentage = (pDays / duration) * 100;
                         }
                     }
 
@@ -1346,39 +1198,25 @@
                         const isWeekend = currentDay.getDay() === 0 || currentDay.getDay() === 6;
                         const isToday = currentDateStr === todayStr;
                         cell.className = `border-b border-r border-gray-100 relative ${isWeekend && !isToday ? 'bg-slate-100/70' : 'bg-white'}`;
-                        cell.setAttribute('data-date', currentDateStr);
                         
-                        if (isToday) {
-                            cell.style.backgroundColor = todayBgColor;
-                        }
+                        if (isToday) cell.style.backgroundColor = todayBgColor;
 
-                        if (i === startIndex && visibleDuration > 0) {
+                        if (i === startIndex) {
                             const bar = document.createElement('div');
-                            const renderedVisibleDuration = Math.min(visibleDuration, totalDays - startIndex);
-                            bar.style.width = `calc(${renderedVisibleDuration * 100}% - 8px)`;
+                            const visibleDuration = Math.min(duration, totalDays - startIndex);
+                            bar.style.width = `calc(${visibleDuration * 100}% - 8px)`;
                             bar.className = `absolute top-1.5 bottom-1.5 left-1 rounded-lg flex items-center px-2.5 overflow-hidden text-[12px] font-medium whitespace-nowrap transition-all cursor-pointer z-10 ${task.completed ? 'task-completed-pattern grayscale' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
-                            if(hiddenDays > 0) {
-                                bar.style.borderTopLeftRadius = '0';
-                                bar.style.borderBottomLeftRadius = '0';
-                                bar.style.borderLeft = '2px dashed rgba(255,255,255,0.6)';
-                            }
                             const textColor = getTextColor(task.color);
                             bar.style.backgroundColor = task.color;
                             bar.style.color = textColor;
-                            
                             bar.onclick = (e) => {
                                 if (e.target.classList.contains('resize-handle')) return;
                                 openEditModal(task.id);
                             };
                             
-                            const ownerInitial = task.owner.charAt(0).toUpperCase();
-                            const displayOwner = renderedVisibleDuration === 1 ? ownerInitial : task.owner;
-                            const ownerPadding = renderedVisibleDuration === 1 ? 'px-1.5' : 'px-2';
-                            
                             bar.innerHTML = `
                                 ${pastPercentage > 0 ? `<div class="task-past-mask absolute left-0 top-0 bottom-0" style="width: ${pastPercentage}%"></div>` : ''}
-                                <span class="truncate flex-1 relative z-10 pointer-events-none ${task.completed ? 'line-through opacity-80' : ''}" title="${task.name}">${task.name}</span>
-                                <span class="ml-1.5 ${ownerPadding} py-0.5 bg-white/40 rounded text-[10px] uppercase shrink-0 font-bold relative z-10 pointer-events-none">${displayOwner}</span>
+                                <span class="truncate flex-1 relative z-10 ${task.completed ? 'line-through opacity-80' : ''}" title="${task.name}">${task.name}</span>
                                 <div class="resize-handle"></div>
                             `;
                             const handle = bar.querySelector('.resize-handle');
@@ -1392,18 +1230,9 @@
                         currentDay.setDate(currentDay.getDate() + 1);
                     }
                 });
-            }
+            });
             container.innerHTML = '';
             container.appendChild(wrapper);
-        }
-
-        function groupBy(array, property) {
-            return array.reduce((acc, obj) => {
-                const key = obj[property];
-                if (!acc[key]) acc[key] = [];
-                acc[key].push(obj);
-                return acc;
-            }, {});
         }
 
         function formatDate(date) {
@@ -1424,7 +1253,7 @@
             }
             toast.classList.remove('opacity-0', '-translate-y-5', 'hidden');
             toast.classList.add('opacity-100', 'translate-y-0');
-            if(type !== 'loading') setTimeout(() => { toast.classList.remove('opacity-100', 'translate-y-0'); toast.classList.add('opacity-0', '-translate-y-5'); }, 2500);
+            if(type !== 'loading') setTimeout(() => { hideToast(); }, 2500);
         }
 
         function hideToast() {
@@ -1433,26 +1262,20 @@
             toast.classList.add('opacity-0', '-translate-y-5');
         }
 
-        function toggleClearBtn(inputId) {
-            const input = document.getElementById(inputId);
-            const arrow = document.getElementById(inputId + 'Arrow');
-            const clearBtn = document.getElementById(inputId + 'ClearBtn');
-            if (input.value.length > 0) { arrow.classList.add('hidden'); clearBtn.classList.remove('hidden'); } 
-            else { arrow.classList.remove('hidden'); clearBtn.classList.add('hidden'); }
-        }
-
         window.clearInput = function(inputId) {
             const input = document.getElementById(inputId);
             input.value = '';
-            toggleClearBtn(inputId);
+            document.getElementById(inputId + 'Arrow').classList.remove('hidden');
+            document.getElementById(inputId + 'ClearBtn').classList.add('hidden');
             input.focus();
-            let colorField = inputId === 'owner' ? 'taskColor' : (inputId === 'qaOwner' ? 'qaColor' : null);
-            if(colorField) { document.getElementById(colorField).value = '#fde047'; }
         };
 
-        function setupCombobox(inputId, dataSetOrObj) {
+        function setupCombobox(inputId) {
             const input = document.getElementById(inputId);
             const list = document.getElementById(inputId + 'DropdownList');
+            const arrow = document.getElementById(inputId + 'Arrow');
+            const clearBtn = document.getElementById(inputId + 'ClearBtn');
+            
             function showList() {
                 renderList();
                 list.classList.remove('hidden');
@@ -1464,42 +1287,35 @@
             }
             function renderList() {
                 list.innerHTML = '';
-                let items = dataSetOrObj instanceof Set ? Array.from(dataSetOrObj) : Object.keys(dataSetOrObj);
                 const filterText = input.value.toLowerCase();
-                const filteredItems = items.filter(item => item.toLowerCase().includes(filterText));
+                const filteredItems = ownersOrder.filter(item => item.toLowerCase().includes(filterText));
                 if (filteredItems.length === 0) {
-                    list.innerHTML = `<li class="px-3 py-2 text-sm text-gray-400 italic text-center">按回车添加新选项</li>`;
+                    list.innerHTML = `<li class="px-3 py-2 text-sm text-gray-400 italic text-center">输入即添加新选项</li>`;
                     return;
                 }
                 filteredItems.forEach(item => {
                     const li = document.createElement('li');
-                    li.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 cursor-pointer transition-colors';
-                    li.textContent = item;
+                    li.className = 'px-3 py-2 text-sm text-gray-700 hover:bg-indigo-50 cursor-pointer transition-colors flex items-center gap-2';
+                    li.innerHTML = `<div class="w-3 h-3 rounded" style="background-color:${ownerColors[item]}"></div> ${item}`;
                     li.onmousedown = (e) => { 
                         e.preventDefault(); 
                         input.value = item;
-                        toggleClearBtn(inputId);
+                        arrow.classList.add('hidden'); clearBtn.classList.remove('hidden');
                         hideList();
-                        let colorField = inputId === 'owner' ? 'taskColor' : (inputId === 'qaOwner' ? 'qaColor' : null);
-                        if(colorField && ownerColors[item]) {
-                            document.getElementById(colorField).value = ownerColors[item];
-                        }
                     };
                     list.appendChild(li);
                 });
             }
             input.addEventListener('focus', showList);
             input.addEventListener('input', () => { 
-                toggleClearBtn(inputId); showList(); 
-                let colorField = inputId === 'owner' ? 'taskColor' : (inputId === 'qaOwner' ? 'qaColor' : null);
-                let currentVal = input.value.trim();
-                if(colorField && ownerColors[currentVal]) { 
-                    document.getElementById(colorField).value = ownerColors[currentVal]; 
-                }
+                if(input.value.length > 0) { arrow.classList.add('hidden'); clearBtn.classList.remove('hidden'); }
+                else { arrow.classList.remove('hidden'); clearBtn.classList.add('hidden'); }
+                showList(); 
             });
             input.addEventListener('blur', hideList);
         }
-
+        setupCombobox('owner');
+        
         window.closeViewDropdown = function(text, mode) {
             document.getElementById('viewDropdownMenu').classList.add('hidden');
             if(text) document.getElementById('currentViewText').textContent = text;
@@ -1512,14 +1328,16 @@
         window.switchView = function(mode) {
             const gantt = document.getElementById('ganttSection');
             const pool = document.getElementById('taskSection');
+            const kanban = document.getElementById('kanbanSection');
             const logPage = document.getElementById('logPageSection');
+            
             const btnLog = document.getElementById('btnViewLog');
             const viewMainBtn = document.getElementById('viewMainBtn');
             const viewDropdownToggleBtn = document.getElementById('viewDropdownToggleBtn');
-            const viewPoolBtn = document.getElementById('viewPoolBtn');
             
             gantt.classList.add('hidden');
             pool.classList.add('hidden');
+            kanban.classList.add('hidden');
             logPage.classList.add('hidden');
             
             if (mode === 'log') {
@@ -1527,115 +1345,33 @@
                 btnLog.classList.add('active');
                 viewMainBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 border-r-0 transition-colors focus:outline-none";
                 viewDropdownToggleBtn.className = "flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 border-l transition-colors focus:outline-none";
-                viewPoolBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors focus:outline-none shrink-0 ml-1 shadow-sm";
-            } else if (mode === 'pool') {
-                pool.classList.remove('hidden');
-                pool.classList.remove('h-auto', 'md:h-[380px]');
-                pool.classList.add('flex-1');
-                viewPoolBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 transition-colors focus:outline-none shrink-0 ml-1 shadow-sm";
-                viewMainBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 border-r-0 transition-colors focus:outline-none";
-                viewDropdownToggleBtn.className = "flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-gray-50 border border-gray-200 text-gray-500 hover:bg-gray-100 border-l transition-colors focus:outline-none";
-                btnLog.classList.remove('active');
+                renderLogs();
+                renderSmartLogForm();
             } else {
                 viewMainBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-l-md bg-indigo-50 border border-indigo-200 text-indigo-700 hover:bg-indigo-100 border-r-0 transition-colors focus:outline-none";
                 viewDropdownToggleBtn.className = "flex items-center justify-center px-1.5 py-1.5 text-xs font-bold rounded-r-md bg-indigo-100 border border-indigo-200 text-indigo-600 hover:bg-indigo-200 border-l transition-colors focus:outline-none";
-                viewPoolBtn.className = "flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors focus:outline-none shrink-0 ml-1 shadow-sm";
                 btnLog.classList.remove('active');
-                
+
                 if (mode === 'gantt') {
                     gantt.classList.remove('hidden');
-                } else if (mode === 'split') {
-                    gantt.classList.remove('hidden');
+                } else if (mode === 'kanban') {
+                    kanban.classList.remove('hidden');
+                } else if (mode === 'pool') {
                     pool.classList.remove('hidden');
-                    pool.classList.add('h-auto', 'md:h-[380px]');
-                    pool.classList.remove('flex-1');
                 }
             }
         };
 
-        window.switchMobileLog = function(type) {
-            const formPanel = document.getElementById('mobLogFormPanel');
-            const historyPanel = document.getElementById('mobLogHistoryPanel');
-            const btnForm = document.getElementById('mobBtnForm');
-            const btnHistory = document.getElementById('mobBtnHistory');
-            
-            if (type === 'form') {
-                formPanel.classList.remove('hidden');
-                historyPanel.classList.add('hidden');
-                historyPanel.classList.remove('flex');
-                
-                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
-                btnHistory.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
-            } else {
-                formPanel.classList.add('hidden');
-                historyPanel.classList.remove('hidden');
-                historyPanel.classList.add('flex');
-                
-                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
-                btnHistory.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
-            }
-        };
-
-        window.switchMobileTask = function(type) {
-            const formPanel = document.getElementById('mobTaskFormPanel');
-            const poolPanel = document.getElementById('mobTaskPoolPanel');
-            const btnForm = document.getElementById('mobBtnTaskForm');
-            const btnPool = document.getElementById('mobBtnTaskPool');
-            
-            if (type === 'form') {
-                formPanel.classList.remove('hidden');
-                poolPanel.classList.add('hidden');
-                poolPanel.classList.remove('flex');
-                
-                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
-                btnPool.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
-            } else {
-                formPanel.classList.add('hidden');
-                poolPanel.classList.remove('hidden');
-                poolPanel.classList.add('flex');
-                
-                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
-                btnPool.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
-            }
-        };
-
-        function saveLocalDraft(key, content) {
-            localStorage.setItem('gantt_draft_' + key, content);
-        }
-
-        function getLocalDraft(key) {
-            return localStorage.getItem('gantt_draft_' + key) || '';
-        }
-
-        function clearLocalDraft(key) {
-            localStorage.removeItem('gantt_draft_' + key);
-        }
-
         window.renderSmartLogForm = function() {
-            const dateInput = document.getElementById('smartLogDateInput').value;
-            if (dateInput) {
-                currentLogDate = dateInput;
-            }
             const container = document.getElementById('smartLogContainer');
             let html = '';
-            const owners = Object.keys(ownerColors);
             const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
-            
             let hasAny = false;
             
-            owners.forEach(owner => {
+            ownersOrder.forEach(owner => {
                 if (currentOwnerFilter !== 'all' && owner !== currentOwnerFilter) return;
-                
-                const ownerTasks = displayTasks.filter(t => t.owner === owner && !t.completed && t.start <= currentLogDate && t.end >= currentLogDate);
-                if(ownerTasks.length === 0) return;
                 hasAny = true; 
-                
-                ownerTasks.sort((a, b) => {
-                    let aDue = a.end === currentLogDate ? -1 : 1;
-                    let bDue = b.end === currentLogDate ? -1 : 1;
-                    return aDue - bDue;
-                });
-                
+                const ownerTasks = displayTasks.filter(t => t.owner === owner && !t.completed && t.start <= currentLogDate && t.end >= currentLogDate);
                 const hiddenClass = defaultLogExpand ? '' : 'hidden';
                 const rotateClass = defaultLogExpand ? 'rotate-180' : '';
                 
@@ -1656,16 +1392,16 @@
                     html += `
                     <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm" data-owner="${owner}" data-taskid="${t.id}">
                         <div class="flex items-start justify-between gap-2 mb-2 relative">
-                            <div class="text-[13px] font-bold text-gray-800 leading-snug flex-1 flex items-center gap-1.5 min-w-0">
-                                <span class="truncate">${t.name}</span>
+                            <div class="text-[13px] font-bold text-gray-800 leading-snug flex-1 flex items-center gap-1.5">
+                                <span>${t.name}</span>
                                 ${t.details ? `
-                                <div class="relative group flex items-center shrink-0">
+                                <div class="relative group flex items-center">
                                     <button type="button" class="text-indigo-400 hover:text-indigo-600 transition-colors outline-none shrink-0 focus:outline-none">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                                     </button>
                                     <div class="absolute bottom-full left-0 mb-2 w-max max-w-[260px] p-3 bg-slate-800 text-slate-100 text-xs rounded-xl shadow-2xl opacity-0 invisible group-hover:opacity-100 group-hover:visible group-focus-within:opacity-100 group-focus-within:visible transition-all duration-200 z-[100] font-normal leading-relaxed break-words border border-slate-700/50">
                                         <div class="absolute -bottom-1.5 left-4 w-3 h-3 bg-slate-800 rotate-45 border-r border-b border-slate-700/50"></div>
-                                        <div class="relative z-10 whitespace-pre-wrap task-details-rich">${t.details}</div>
+                                        <div class="relative z-10 whitespace-pre-wrap">${t.details.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</div>
                                     </div>
                                 </div>
                                 ` : ''}
@@ -1673,14 +1409,14 @@
                             <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${isDue ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'} shrink-0">${isDue ? '截止' : '推进中'}</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
-                            <select onchange="updateStatusColor(this)" class="smart-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 font-bold outline-none transition-colors">
+                            <select class="smart-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white font-medium text-gray-700 outline-none">
                                 <option value="推进中" selected>推进中</option>
                                 <option value="已完成">已完成</option>
                                 <option value="未完成">未完成</option>
                             </select>
                             <input type="text" class="smart-log-comp flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white outline-none" placeholder="填写完成度 (选填)...">
                         </div>
-                        <div class="smart-log-rich rich-input w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="万能输入框 (支持直接粘贴图片、链接或补充说明)..."></div>
+                        <div class="smart-log-rich rich-input w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-gray-50 focus:bg-white min-h-[60px] overflow-x-hidden outline-none break-all" contenteditable="true" data-placeholder="万能输入框 (支持直接粘贴图片、链接或补充说明)..."></div>
                     </div>`;
                 });
 
@@ -1691,74 +1427,41 @@
                             <input type="text" class="smart-log-custom-name flex-1 px-2 py-1 border border-indigo-200 rounded text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white placeholder-indigo-300/80 outline-none text-gray-800" placeholder="填写临时/突发任务名称 (若无请留空)...">
                         </div>
                         <div class="flex items-center gap-2 mb-2">
-                            <select onchange="updateStatusColor(this)" class="smart-log-status w-24 px-2 py-1.5 border border-indigo-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 font-bold outline-none transition-colors">
+                            <select class="smart-log-status w-24 px-2 py-1.5 border border-indigo-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white font-medium text-gray-700 outline-none">
                                 <option value="已完成" selected>已完成</option>
                                 <option value="推进中">推进中</option>
                                 <option value="未完成">未完成</option>
                             </select>
                             <input type="text" class="smart-log-comp flex-1 px-3 py-1.5 border border-indigo-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white outline-none placeholder-indigo-300/80 text-gray-800" placeholder="填写进度 (选填)...">
                         </div>
-                        <div class="smart-log-rich rich-input w-full px-3 py-2 border border-indigo-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white min-h-[50px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-800" contenteditable="true" data-placeholder="补充说明/图片/链接..."></div>
+                        <div class="smart-log-rich rich-input w-full px-3 py-2 border border-indigo-200 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white min-h-[50px] overflow-x-hidden outline-none break-all text-gray-800" contenteditable="true" data-placeholder="补充说明/图片/链接..."></div>
                     </div>
-                `;
-                html += `</div></div>`;
+                </div></div>`;
             });
 
             if(!hasAny) {
                 html = `
                 <div class="h-32 flex flex-col items-center justify-center text-gray-400">
                     <svg class="w-8 h-8 mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 13l4 4L19 7"></path></svg>
-                    <p class="text-xs">当前视角下无相关排期任务</p>
+                    <p class="text-xs">当前视角下无相关人员</p>
                 </div>
                 `;
             }
             container.innerHTML = html;
-            
-            container.querySelectorAll('.smart-log-status').forEach(el => updateStatusColor(el));
-            
-            container.querySelectorAll('.smart-log-rich').forEach(el => {
-                const row = el.closest('[data-owner]');
-                const key = row.getAttribute('data-taskid') || ('custom_' + row.getAttribute('data-owner'));
-                el.innerHTML = getLocalDraft(key);
-                el.addEventListener('input', (e) => saveLocalDraft(key, e.target.innerHTML));
-            });
         };
-
-        function makeLinksClickable(htmlContent) {
-            let temp = document.createElement('div');
-            temp.innerHTML = htmlContent;
-            let walker = document.createTreeWalker(temp, NodeFilter.SHOW_TEXT, null, false);
-            let nodes = [];
-            let n;
-            while(n = walker.nextNode()) nodes.push(n);
-            nodes.forEach(node => {
-                if(node.parentNode.tagName === 'A') return;
-                let text = node.nodeValue;
-                if(/(https?:\/\/[^\s<>]+)/.test(text)) {
-                    let span = document.createElement('span');
-                    span.innerHTML = text.replace(/(https?:\/\/[^\s<>]+)/g, '<a href="$1" target="_blank" class="text-blue-500 underline break-all hover:text-blue-700">$1</a>');
-                    node.parentNode.replaceChild(span, node);
-                }
-            });
-            return temp.innerHTML;
-        }
 
         window.submitSmartLogs = function() {
             const container = document.getElementById('smartLogContainer');
             const items = container.querySelectorAll('[data-owner]');
-            
             let groupedLogs = {};
             let hasContent = false;
 
             items.forEach(item => {
                 const owner = item.getAttribute('data-owner');
                 const isCustom = item.getAttribute('data-custom') === 'true';
-                
                 const statusVal = item.querySelector('.smart-log-status').value;
                 const compVal = item.querySelector('.smart-log-comp').value.trim();
-                let richHtml = item.querySelector('.smart-log-rich').innerHTML.trim();
-                
-                if (richHtml) richHtml = makeLinksClickable(richHtml);
+                const richHtml = item.querySelector('.smart-log-rich').innerHTML.trim();
                 
                 if (isCustom) {
                     const customName = item.querySelector('.smart-log-custom-name').value.trim();
@@ -1768,10 +1471,9 @@
                         let contentStr = `• 【${customName}】 [${statusVal}]`;
                         if (compVal) contentStr += ` 进度: ${compVal}。`;
                         if (richHtml && richHtml !== '<br>') {
-                            contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${richHtml}</div>`;
+                            contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600">${richHtml}</div>`;
                         }
                         groupedLogs[owner].push(contentStr);
-                        clearLocalDraft('custom_' + owner);
                     }
                 } else {
                     const taskName = item.querySelector('.text-\\[13px\\] > span').textContent.trim();
@@ -1781,13 +1483,12 @@
                         let contentStr = `• 【${taskName}】 [${statusVal}]`;
                         if (compVal) contentStr += ` 进度: ${compVal}。`;
                         if (richHtml && richHtml !== '<br>') {
-                            contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${richHtml}</div>`;
+                            contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600">${richHtml}</div>`;
                         }
                         groupedLogs[owner].push(contentStr);
                         
-                        const taskId = item.getAttribute('data-taskid');
-                        clearLocalDraft(taskId);
                         if (statusVal === '已完成') {
+                            const taskId = item.getAttribute('data-taskid');
                             const t = tasks.find(x => x.id === taskId);
                             if (t) t.completed = true;
                         }
@@ -1796,7 +1497,7 @@
             });
 
             if(!hasContent) {
-                showToast('请至少填写一项排期进度，或新增一个自由任务', 'error');
+                showToast('请至少填写一项排期进度', 'error');
                 return;
             }
 
@@ -1811,114 +1512,12 @@
             renderSmartLogForm(); 
             renderApp();
         };
-
-        window.confirmDeleteLog = function(id) {
-            document.getElementById('delConfirmBtn').onclick = () => {
-                const log = dailyLogs.find(l => l.id === id);
-                if (log) {
-                    const entries = log.content.split('\n\n');
-                    entries.forEach(entry => {
-                        const nameMatch = entry.match(/• 【(.*?)】/);
-                        const statusMatch = entry.match(/\[(.*?)\]/);
-                        if (nameMatch && statusMatch) {
-                            const name = nameMatch[1];
-                            const status = statusMatch[1];
-                            if (status === '已完成') {
-                                const matchingTask = tasks.find(t => t.name === name && t.owner === log.owner);
-                                if (matchingTask) matchingTask.completed = false;
-                            }
-                        }
-                    });
-                }
-                dailyLogs = dailyLogs.filter(l => l.id !== id);
-                saveData();
-                renderLogs();
-                renderSmartLogForm();
-                renderApp();
-                document.getElementById('delConfirmModal').classList.add('hidden');
-                showToast('记录已永久删除');
-            };
-            document.getElementById('delConfirmModal').classList.remove('hidden');
-        };
-
-        window.editLog = function(id) {
-            const log = dailyLogs.find(l => l.id === id);
-            if(log) {
-                document.getElementById('editLogId').value = id;
-                const wrapper = document.getElementById('editLogContentWrapper');
-                wrapper.innerHTML = '';
-                
-                const entries = log.content.split('\n\n');
-                entries.forEach((entry, idx) => {
-                    const nameMatch = entry.match(/• 【(.*?)】/);
-                    const statusMatch = entry.match(/\[(.*?)\]/);
-                    const progMatch = entry.match(/进度: (.*?)。/);
-                    const richMatch = entry.match(/<div[^>]*>([\s\S]*)<\/div>$/);
-                    
-                    const name = nameMatch ? nameMatch[1] : '自定义任务';
-                    const status = statusMatch ? statusMatch[1] : '推进中';
-                    const prog = progMatch ? progMatch[1] : '';
-                    const rich = richMatch ? richMatch[1] : '';
-
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'bg-gray-50 border border-gray-200 p-3.5 rounded-xl shadow-sm edit-log-item';
-                    itemDiv.innerHTML = `
-                        <div class="font-bold text-[13px] text-gray-800 mb-2 edit-log-name">${name}</div>
-                        <div class="flex items-center gap-2 mb-2">
-                            <select onchange="updateStatusColor(this)" class="edit-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-bold outline-none transition-colors">
-                                <option value="推进中" ${status === '推进中' ? 'selected' : ''}>推进中</option>
-                                <option value="已完成" ${status === '已完成' ? 'selected' : ''}>已完成</option>
-                                <option value="未完成" ${status === '未完成' ? 'selected' : ''}>未完成</option>
-                            </select>
-                            <input type="text" class="edit-log-comp flex-1 px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white outline-none" placeholder="填写完成度 (选填)..." value="${prog}">
-                        </div>
-                        <div class="edit-log-rich rich-input w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="支持直接粘贴图片、链接或补充说明...">${rich}</div>
-                    `;
-                    wrapper.appendChild(itemDiv);
-                });
-                
-                document.querySelectorAll('.edit-log-status').forEach(sel => updateStatusColor(sel));
-                document.getElementById('editLogModal').classList.remove('hidden');
-            }
-        };
-
-        window.saveLogEdit = function() {
-            const id = document.getElementById('editLogId').value;
-            const log = dailyLogs.find(l => l.id === id);
-            if(log) {
-                const items = document.querySelectorAll('.edit-log-item');
-                let newEntries = [];
-                items.forEach(item => {
-                    const name = item.querySelector('.edit-log-name').textContent;
-                    const status = item.querySelector('.edit-log-status').value;
-                    const prog = item.querySelector('.edit-log-comp').value.trim();
-                    let rich = item.querySelector('.edit-log-rich').innerHTML.trim();
-                    rich = makeLinksClickable(rich);
-                    
-                    let contentStr = `• 【${name}】 [${status}]`;
-                    if (prog) contentStr += ` 进度: ${prog}。`;
-                    if (rich && rich !== '<br>') {
-                        contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${rich}</div>`;
-                    }
-                    newEntries.push(contentStr);
-                    
-                    const matchingTask = tasks.find(t => t.name === name && t.owner === log.owner);
-                    if(matchingTask) {
-                        if(status === '已完成') {
-                            matchingTask.completed = true;
-                        } else if(status === '推进中' || status === '未完成') {
-                            matchingTask.completed = false;
-                        }
-                    }
-                });
-                
-                log.content = newEntries.join('\n\n');
-                saveData();
-                renderLogs();
-                renderApp();
-                document.getElementById('editLogModal').classList.add('hidden');
-                showToast('历史进度同步修改成功');
-            }
+        
+        window.deleteLog = function(id) {
+            dailyLogs = dailyLogs.filter(l => l.id !== id);
+            saveData();
+            renderLogs();
+            showToast('记录已删除');
         };
         
         function renderLogs() {
@@ -1936,15 +1535,15 @@
             const displayLogs = currentOwnerFilter === 'all' ? dailyLogs : dailyLogs.filter(l => l.owner === currentOwnerFilter);
             
             if (displayLogs.length === 0) {
-                container.innerHTML = `
-                    <div class="h-full flex flex-col items-center justify-center text-gray-400">
-                        <p class="text-sm">当前视角下暂无相关记录</p>
-                    </div>
-                `;
+                container.innerHTML = '<div class="h-full flex flex-col items-center justify-center text-gray-400"><p class="text-sm">当前视角下暂无相关记录</p></div>';
                 return;
             }
 
-            const grouped = groupBy(displayLogs, 'date');
+            const grouped = displayLogs.reduce((acc, obj) => {
+                if (!acc[obj.date]) acc[obj.date] = [];
+                acc[obj.date].push(obj);
+                return acc;
+            }, {});
             const sortedDates = Object.keys(grouped).sort((a, b) => new Date(b) - new Date(a));
             let html = '<div class="relative pl-4 border-l-2 border-gray-100 ml-2">';
             
@@ -1957,27 +1556,17 @@
                 `;
                 grouped[date].forEach(log => {
                     const color = ownerColors[log.owner] || '#64748b';
-                    
-                    let formattedContent = log.content.replace(/\n/g, '<br>');
-                    formattedContent = formattedContent.replace(/\[已完成\]/g, '<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md text-[10px] font-bold border border-emerald-200">已完成</span>');
-                    formattedContent = formattedContent.replace(/\[推进中\]/g, '<span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] font-bold border border-blue-200">推进中</span>');
-                    formattedContent = formattedContent.replace(/\[未完成\]/g, '<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-md text-[10px] font-bold border border-red-200">未完成</span>');
-                    formattedContent = makeLinksClickable(formattedContent);
-
                     html += `
-                        <div class="bg-white border border-gray-200 p-4 rounded-xl text-sm grid grid-cols-[8px_1fr_auto] gap-3 items-start relative group transition-all hover:border-indigo-300 hover:shadow-md overflow-hidden">
-                            <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background-color: ${color}"></div>
-                            <div class="min-w-0 flex-1 overflow-hidden break-all history-rich-img">
+                        <div class="bg-white border border-gray-200 p-4 rounded-xl text-sm flex gap-3 relative group transition-all hover:border-indigo-300 hover:shadow-md">
+                            <div class="w-1.5 rounded-full shrink-0" style="background-color: ${color}"></div>
+                            <div class="flex-1 min-w-0">
                                 <div class="font-bold text-[13px] mb-1.5 flex items-center gap-2" style="color: ${color}">
                                     <span>${log.owner}</span>
                                 </div>
-                                <div class="text-gray-700 leading-relaxed break-words">${formattedContent}</div>
+                                <div class="text-gray-700 leading-relaxed">${log.content.replace(/\n/g, '<br>')}</div>
                             </div>
-                            <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity md:static absolute right-3 top-3 bg-white/80 p-1 rounded-md backdrop-blur-sm">
-                                <button type="button" onclick="editLog('${log.id}')" class="text-gray-400 hover:text-indigo-500 bg-gray-50 hover:bg-indigo-50 rounded p-1.5 shadow-sm border border-gray-200 transition-colors">
-                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                </button>
-                                <button type="button" onclick="confirmDeleteLog('${log.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 hover:bg-red-50 rounded p-1.5 shadow-sm border border-gray-200 transition-colors">
+                            <div class="absolute right-3 top-3 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                <button type="button" onclick="deleteLog('${log.id}')" class="text-gray-400 hover:text-red-500 bg-gray-50 rounded p-1.5 shadow-sm border border-gray-200">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                 </button>
                             </div>
@@ -1993,148 +1582,6 @@
         applyLogBtnStyle();
         setTimeout(() => { switchView('gantt'); }, 50);
         pullDataFromCloud();
-
-        document.addEventListener('paste', function(e) {
-            if (!e.target.closest('.rich-input')) return;
-            
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let index in items) {
-                const item = items[index];
-                if (item.kind === 'file' && item.type.startsWith('image/')) {
-                    e.preventDefault(); 
-                    
-                    const blob = item.getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = new Image();
-                        img.onload = function() {
-                            const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            
-                            const MAX_SIZE = 800;
-                            let width = img.width;
-                            let height = img.height;
-                            
-                            if (width > height && width > MAX_SIZE) {
-                                height *= MAX_SIZE / width;
-                                width = MAX_SIZE;
-                            } else if (height > MAX_SIZE) {
-                                width *= MAX_SIZE / height;
-                                height = MAX_SIZE;
-                            }
-                            
-                            canvas.width = width;
-                            canvas.height = height;
-                            ctx.drawImage(img, 0, 0, width, height);
-                            
-                            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                            document.execCommand('insertHTML', false, `<img src="${compressedDataUrl}" alt="截图">`);
-                        };
-                        img.src = event.target.result;
-                    };
-                    reader.readAsDataURL(blob);
-                }
-            }
-        });
-
-        let imgScale = 1;
-        let imgTranslateX = 0;
-        let imgTranslateY = 0;
-        let isImgDragging = false;
-        let imgStartX = 0;
-        let imgStartY = 0;
-        let initialPinchDistance = null;
-        let initialPinchScale = 1;
-
-        const modalImg = document.getElementById('generatedImg');
-        const modalContainer = document.getElementById('imageModalContainer');
-
-        window.resetImgTransform = function() {
-            imgScale = 1;
-            imgTranslateX = 0;
-            imgTranslateY = 0;
-            if(modalImg) {
-                modalImg.style.transform = `translate(0px, 0px) scale(1)`;
-                modalImg.style.cursor = 'grab';
-            }
-        };
-
-        window.closeImageModal = function() {
-            document.getElementById('imageModal').classList.add('hidden');
-            resetImgTransform();
-        };
-
-        function updateImgTransform() {
-            modalImg.style.transform = `translate(${imgTranslateX}px, ${imgTranslateY}px) scale(${imgScale})`;
-        }
-
-        modalContainer.addEventListener('wheel', (e) => {
-            if (document.getElementById('imageModal').classList.contains('hidden')) return;
-            e.preventDefault();
-            const delta = e.deltaY > 0 ? -0.1 : 0.1;
-            imgScale += delta;
-            imgScale = Math.max(0.5, Math.min(imgScale, 5));
-            updateImgTransform();
-        }, { passive: false });
-
-        modalImg.addEventListener('mousedown', (e) => {
-            e.preventDefault();
-            isImgDragging = true;
-            imgStartX = e.clientX - imgTranslateX;
-            imgStartY = e.clientY - imgTranslateY;
-            modalImg.style.cursor = 'grabbing';
-        });
-        window.addEventListener('mousemove', (e) => {
-            if (!isImgDragging) return;
-            imgTranslateX = e.clientX - imgStartX;
-            imgTranslateY = e.clientY - imgStartY;
-            updateImgTransform();
-        });
-        window.addEventListener('mouseup', () => {
-            isImgDragging = false;
-            modalImg.style.cursor = 'grab';
-        });
-
-        modalContainer.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 2) {
-                initialPinchDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                initialPinchScale = imgScale;
-            } else if (e.touches.length === 1) {
-                isImgDragging = true;
-                imgStartX = e.touches[0].clientX - imgTranslateX;
-                imgStartY = e.touches[0].clientY - imgTranslateY;
-            }
-        });
-
-        modalContainer.addEventListener('touchmove', (e) => {
-            if (document.getElementById('imageModal').classList.contains('hidden')) return;
-            e.preventDefault();
-            
-            if (e.touches.length === 2) {
-                const currentDistance = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                imgScale = initialPinchScale * (currentDistance / initialPinchDistance);
-                imgScale = Math.max(0.5, Math.min(imgScale, 5));
-                updateImgTransform();
-            } else if (e.touches.length === 1 && isImgDragging) {
-                imgTranslateX = e.touches[0].clientX - imgStartX;
-                imgTranslateY = e.touches[0].clientY - imgStartY;
-                updateImgTransform();
-            }
-        }, { passive: false });
-
-        modalContainer.addEventListener('touchend', (e) => {
-            if (e.touches.length < 2) initialPinchDistance = null;
-            if (e.touches.length === 0) isImgDragging = false;
-        });
-
-        document.getElementById('smartLogDateInput').value = todayStr;
-
     </script>
 </body>
 </html>
