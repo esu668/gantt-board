@@ -27,6 +27,8 @@
         * { -webkit-tap-highlight-color: transparent; }
         .resize-handle { position: absolute; right: 0; top: 0; bottom: 0; width: 10px; cursor: ew-resize; z-index: 15; border-top-right-radius: 0.25rem; border-bottom-right-radius: 0.25rem; background: linear-gradient(90deg, transparent, rgba(0,0,0,0.1)); }
         .resize-handle:hover { background: rgba(0,0,0,0.2); }
+        .resize-handle-left { right: auto; left: 0; border-radius: 0; border-top-left-radius: 0.25rem; border-bottom-left-radius: 0.25rem; background: linear-gradient(270deg, transparent, rgba(0,0,0,0.1)); }
+        .resize-handle-left:hover { background: rgba(0,0,0,0.2); }
         .rich-input:empty:before { content: attr(data-placeholder); color: #9ca3af; pointer-events: none; display: block; }
         .rich-input a { color: #3b82f6; text-decoration: underline; }
         .history-rich-img img, .smart-log-rich img, .edit-log-rich img, .rich-input img, .task-details-rich img { max-width: 80px !important; max-height: 80px !important; object-fit: cover !important; cursor: zoom-in; border-radius: 6px; display: inline-block; margin: 4px; border: 1px solid #e5e7eb; box-shadow: 0 1px 2px rgba(0,0,0,0.05); }
@@ -1092,9 +1094,16 @@
             const deltaDays = Math.round(deltaX / dragInfo.cellWidth);
             if (deltaDays !== dragInfo.deltaDays) {
                 dragInfo.deltaDays = deltaDays;
-                let newWidth = dragInfo.initialWidth + (deltaDays * dragInfo.cellWidth);
-                if (newWidth < 20) newWidth = 20;
-                dragInfo.element.style.width = `calc(${newWidth}px)`;
+                if (dragInfo.side === 'left') {
+                    let newWidth = dragInfo.initialWidth - (deltaDays * dragInfo.cellWidth);
+                    if (newWidth < 20) newWidth = 20;
+                    dragInfo.element.style.width = `calc(${newWidth}px)`;
+                    dragInfo.element.style.transform = `translateX(${deltaDays * dragInfo.cellWidth}px)`;
+                } else {
+                    let newWidth = dragInfo.initialWidth + (deltaDays * dragInfo.cellWidth);
+                    if (newWidth < 20) newWidth = 20;
+                    dragInfo.element.style.width = `calc(${newWidth}px)`;
+                }
             }
         });
 
@@ -1105,19 +1114,30 @@
                 if (task) {
                     const eParts = task.end.split('-');
                     const ed = new Date(eParts[0], eParts[1] - 1, eParts[2]);
-                    ed.setDate(ed.getDate() + dragInfo.deltaDays);
-                    
                     const sParts = task.start.split('-');
                     const sd = new Date(sParts[0], sParts[1] - 1, sParts[2]);
                     
-                    if (ed >= sd) {
-                        task.end = formatDate(ed);
-                        saveDataLocal();
-                        scheduleCloudSync();
-                        renderApp();
-                        showToast('日期已更新');
-                        renderSmartLogForm();
-                    } else renderApp();
+                    if (dragInfo.side === 'left') {
+                        sd.setDate(sd.getDate() + dragInfo.deltaDays);
+                        if (sd <= ed) {
+                            task.start = formatDate(sd);
+                            saveDataLocal();
+                            scheduleCloudSync();
+                            renderApp();
+                            showToast('日期已更新');
+                            renderSmartLogForm();
+                        } else renderApp();
+                    } else {
+                        ed.setDate(ed.getDate() + dragInfo.deltaDays);
+                        if (ed >= sd) {
+                            task.end = formatDate(ed);
+                            saveDataLocal();
+                            scheduleCloudSync();
+                            renderApp();
+                            showToast('日期已更新');
+                            renderSmartLogForm();
+                        } else renderApp();
+                    }
                 }
             } else renderApp();
             dragInfo = null;
@@ -1567,13 +1587,19 @@
                                     </div>
                                     ${ownerHtml}
                                     ${rightElementsHtml}
-                                    <div class="resize-handle"></div>
+                                    ${hiddenDays > 0 ? '' : '<div class="resize-handle resize-handle-left"></div>'}
+                                    <div class="resize-handle resize-handle-right"></div>
                                 `;
                                 
-                                const handle = bar.querySelector('.resize-handle');
-                                handle.onmousedown = (e) => {
+                                const handleR = bar.querySelector('.resize-handle-right');
+                                handleR.onmousedown = (e) => {
                                     e.stopPropagation();
-                                    dragInfo = { taskId: task.id, startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
+                                    dragInfo = { taskId: task.id, side: 'right', startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
+                                };
+                                const handleL = bar.querySelector('.resize-handle-left');
+                                if (handleL) handleL.onmousedown = (e) => {
+                                    e.stopPropagation();
+                                    dragInfo = { taskId: task.id, side: 'left', startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
                                 };
                                 cell.appendChild(bar);
                             }
