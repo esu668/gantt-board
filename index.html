@@ -489,7 +489,7 @@
         const deadlineContainer = document.getElementById('deadlineContainer');
 
         ganttContainer.addEventListener('mousedown', (e) => {
-            if (e.target.closest('.resize-handle') || e.target.closest('button')) return;
+            if (e.target.closest('.resize-handle') || e.target.closest('button') || e.target.closest('.gantt-bar')) return;
             isDown = true;
             ganttContainer.style.cursor = 'grabbing';
             startX = e.pageX - ganttContainerWrapper.offsetLeft;
@@ -1092,6 +1092,16 @@
         document.addEventListener('mousemove', (e) => {
             if (!dragInfo) return;
             const deltaX = e.clientX - dragInfo.startX;
+            const deltaY = e.clientY - (dragInfo.startY ?? e.clientY);
+            if (!barDragMoved && (Math.abs(deltaX) > 5 || Math.abs(deltaY) > 5)) {
+                barDragMoved = true;
+                document.body.style.userSelect = 'none';
+                if (dragInfo.side === 'move') {
+                    dragInfo.element.style.transition = 'none';
+                    dragInfo.element.style.zIndex = '30';
+                    dragInfo.element.style.opacity = '0.85';
+                }
+            }
             const deltaDays = Math.round(deltaX / dragInfo.cellWidth);
             if (deltaDays !== dragInfo.deltaDays) {
                 dragInfo.deltaDays = deltaDays;
@@ -1113,7 +1123,6 @@
 
         document.addEventListener('mouseup', () => {
             if (!dragInfo) return;
-            if (dragInfo.deltaDays !== 0) barDragMoved = true;
             if (dragInfo.deltaDays !== 0) {
                 const task = tasks.find(t => t.id === dragInfo.taskId);
                 if (task) {
@@ -1153,9 +1162,17 @@
                             renderSmartLogForm();
                         } else renderApp();
                     }
-                }
-            } else renderApp();
+                } else renderApp();
+            } else if (barDragMoved) {
+                // 拖了一点点但不满一天：只还原样式，不重绘，避免销毁节点
+                dragInfo.element.style.transform = '';
+                dragInfo.element.style.zIndex = '';
+                dragInfo.element.style.opacity = '';
+                dragInfo.element.style.cursor = '';
+                dragInfo.element.style.transition = '';
+            }
             dragInfo = null;
+            document.body.style.userSelect = '';
             setTimeout(() => { barDragMoved = false; }, 0);
         });
 
@@ -1555,7 +1572,7 @@
                             if (i === startIndex && visibleDuration > 0) {
                                 const bar = document.createElement('div');
                                 bar.style.width = `calc(${renderedVisibleDuration * 100}% - 4px)`;
-                                bar.className = `absolute top-1.5 bottom-1.5 left-0.5 rounded-md flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
+                                bar.className = `gantt-bar absolute top-1.5 bottom-1.5 left-0.5 rounded-md flex items-center text-[13px] font-semibold transition-all cursor-pointer z-10 shadow-sm ${task.completed ? 'task-completed-pattern opacity-60 grayscale-[30%]' : 'hover:-translate-y-[1px] hover:shadow-md'}`;
                                 
                                 if(hiddenDays > 0) {
                                     bar.classList.remove('rounded');
@@ -1576,13 +1593,13 @@
                                 
                                 bar.onclick = (e) => {
                                     if (e.target.closest('.resize-handle')) return;
-                                    if (barDragMoved) { barDragMoved = false; return; }
+                                    if (barDragMoved) return;
                                     openEditModal(task.id);
                                 };
                                 bar.onmousedown = (e) => {
+                                    if (e.button !== 0) return;
                                     if (e.target.closest('.resize-handle')) return;
-                                    e.preventDefault();
-                                    dragInfo = { taskId: task.id, side: 'move', startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
+                                    dragInfo = { taskId: task.id, side: 'move', startX: e.clientX, startY: e.clientY, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
                                 };
                                 
                                 let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
