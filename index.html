@@ -479,6 +479,7 @@
         const todayStr = getBeijingDateStr();
         let currentLogDate = todayStr;
         let dragInfo = null;
+        let barDragMoved = false;
         let isDown = false;
         let startX;
         let scrollLeft;
@@ -1094,7 +1095,10 @@
             const deltaDays = Math.round(deltaX / dragInfo.cellWidth);
             if (deltaDays !== dragInfo.deltaDays) {
                 dragInfo.deltaDays = deltaDays;
-                if (dragInfo.side === 'left') {
+                if (dragInfo.side === 'move') {
+                    dragInfo.element.style.transform = `translateX(${deltaDays * dragInfo.cellWidth}px)`;
+                    dragInfo.element.style.cursor = 'grabbing';
+                } else if (dragInfo.side === 'left') {
                     let newWidth = dragInfo.initialWidth - (deltaDays * dragInfo.cellWidth);
                     if (newWidth < 20) newWidth = 20;
                     dragInfo.element.style.width = `calc(${newWidth}px)`;
@@ -1109,6 +1113,7 @@
 
         document.addEventListener('mouseup', () => {
             if (!dragInfo) return;
+            if (dragInfo.deltaDays !== 0) barDragMoved = true;
             if (dragInfo.deltaDays !== 0) {
                 const task = tasks.find(t => t.id === dragInfo.taskId);
                 if (task) {
@@ -1117,7 +1122,17 @@
                     const sParts = task.start.split('-');
                     const sd = new Date(sParts[0], sParts[1] - 1, sParts[2]);
                     
-                    if (dragInfo.side === 'left') {
+                    if (dragInfo.side === 'move') {
+                        sd.setDate(sd.getDate() + dragInfo.deltaDays);
+                        ed.setDate(ed.getDate() + dragInfo.deltaDays);
+                        task.start = formatDate(sd);
+                        task.end = formatDate(ed);
+                        saveDataLocal();
+                        scheduleCloudSync();
+                        renderApp();
+                        showToast('日期已更新');
+                        renderSmartLogForm();
+                    } else if (dragInfo.side === 'left') {
                         sd.setDate(sd.getDate() + dragInfo.deltaDays);
                         if (sd <= ed) {
                             task.start = formatDate(sd);
@@ -1141,6 +1156,7 @@
                 }
             } else renderApp();
             dragInfo = null;
+            setTimeout(() => { barDragMoved = false; }, 0);
         });
 
         window.deleteTask = function(id) {
@@ -1560,7 +1576,13 @@
                                 
                                 bar.onclick = (e) => {
                                     if (e.target.closest('.resize-handle')) return;
+                                    if (barDragMoved) { barDragMoved = false; return; }
                                     openEditModal(task.id);
+                                };
+                                bar.onmousedown = (e) => {
+                                    if (e.target.closest('.resize-handle')) return;
+                                    e.preventDefault();
+                                    dragInfo = { taskId: task.id, side: 'move', startX: e.clientX, initialWidth: bar.offsetWidth, cellWidth: cell.offsetWidth, element: bar, deltaDays: 0 };
                                 };
                                 
                                 let pureText = task.details ? task.details.replace(/<[^>]*>?/gm, ' ').replace(/"/g, '&quot;').trim() : '';
