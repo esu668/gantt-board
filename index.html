@@ -258,6 +258,40 @@
         </div>
     </div>
 
+    <div id="completedDetailModal" class="fixed inset-0 z-[260] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
+        <div class="bg-white rounded-2xl relative max-w-[560px] w-full shadow-2xl overflow-hidden max-h-[90vh] flex flex-col">
+            <div class="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3 shrink-0">
+                <div class="min-w-0">
+                    <div class="flex items-center gap-2 mb-1.5">
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">已完成</span>
+                        <span id="completedDetailOwner" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500"></span>
+                    </div>
+                    <h3 id="completedDetailTitle" class="font-bold text-gray-800 text-lg leading-snug break-words"></h3>
+                    <div id="completedDetailSchedule" class="text-[11px] text-gray-400 mt-1"></div>
+                </div>
+                <button type="button" onclick="closeCompletedDetail()" class="text-gray-400 hover:text-gray-600 p-1.5 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors shrink-0"><svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg></button>
+            </div>
+            <div class="p-5 overflow-y-auto flex flex-col gap-4">
+                <div class="bg-gray-50 border border-gray-200 rounded-xl p-3.5">
+                    <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">原任务细节</div>
+                    <div id="completedDetailTaskDetails" class="task-details-rich text-sm text-gray-700 leading-relaxed break-words"></div>
+                </div>
+                <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3.5">
+                    <div class="flex items-center justify-between gap-3 mb-2">
+                        <div class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">完成记录</div>
+                        <div id="completedDetailDate" class="text-[11px] font-medium text-emerald-600"></div>
+                    </div>
+                    <div id="completedDetailProgress" class="hidden text-xs font-semibold text-gray-600 mb-2 bg-white/80 border border-emerald-100 rounded-lg px-2.5 py-2"></div>
+                    <div id="completedDetailRich" class="history-rich-img text-sm text-gray-700 leading-relaxed break-words"></div>
+                </div>
+            </div>
+            <div class="px-5 py-4 border-t border-gray-100 bg-gray-50 flex items-center justify-between gap-3 shrink-0">
+                <button type="button" id="completedRestoreBtn" class="px-3.5 py-2 text-sm font-semibold text-gray-600 bg-white border border-gray-200 rounded-xl hover:bg-gray-100 transition-colors">恢复为未完成</button>
+                <button type="button" id="completedEditBtn" class="px-4 py-2 text-sm font-semibold text-white bg-slate-900 rounded-xl hover:bg-slate-800 transition-colors">修改原任务</button>
+            </div>
+        </div>
+    </div>
+
     <div id="quickAddModal" class="fixed inset-0 z-[250] bg-slate-900/60 backdrop-blur-sm hidden flex items-center justify-center transition-opacity p-4">
         <div class="bg-white p-5 md:p-6 rounded-2xl relative max-w-[420px] w-full shadow-2xl overflow-y-auto max-h-full">
             <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">添加排期</h3>
@@ -505,19 +539,22 @@
         });
         
         ganttContainer.addEventListener('contextmenu', (e) => {
-            if (e.target.closest('.resize-handle') || e.target.closest('.absolute.top-1\\.5')) return;
+            if (e.target.closest('.resize-handle') || e.target.closest('.gantt-bar')) return;
             e.preventDefault();
             const cell = e.target.closest('[data-date]');
             if (cell) {
                 const date = cell.getAttribute('data-date');
+                const regionOwner = cell.getAttribute('data-owner') || (currentOwnerFilter !== 'all' ? currentOwnerFilter : '');
+                const ownerMap = getOwnerColorMap();
+                const ownerColor = regionOwner && ownerMap[regionOwner] ? ownerMap[regionOwner] : '#fde047';
                 document.getElementById('qaStartDate').value = date;
                 document.getElementById('qaEndDate').value = date;
                 document.getElementById('qaName').value = '';
                 document.getElementById('qaDetails').innerHTML = '';
-                document.getElementById('qaOwner').value = '';
-                document.getElementById('qaColorPicker').value = '#fde047';
-                document.getElementById('qaColorHex').value = '#fde047';
-                document.getElementById('qaColorBox').style.backgroundColor = '#fde047';
+                document.getElementById('qaOwner').value = regionOwner;
+                document.getElementById('qaColorPicker').value = ownerColor;
+                document.getElementById('qaColorHex').value = ownerColor;
+                document.getElementById('qaColorBox').style.backgroundColor = ownerColor;
                 toggleClearBtn('qaOwner');
                 document.getElementById('quickAddModal').classList.remove('hidden');
                 setTimeout(() => document.getElementById('qaName').focus(), 100);
@@ -662,6 +699,8 @@
         };
 
         window.saveSettings = function() {
+            const beforeState = captureDataState();
+            const previousAutoSummary = localStorage.getItem('gantt_auto_summary');
             const newOrder = [];
             document.querySelectorAll('.owner-setting-row').forEach(row => {
                 const name = row.querySelector('.owner-name').value.trim();
@@ -669,16 +708,30 @@
                 if(name) newOrder.push({name, color: color.length===7 ? color : '#94a3b8'});
             });
             ownerOrder = newOrder;
+            touchOwnerOrder();
 
             todayBgColor = formatHexColor(document.getElementById('setHexTodayBg').value) || '#eef2ff';
             logBgColor = formatHexColor(document.getElementById('setHexLogBg').value) || '#4f46e5';
             defaultLogExpand = document.getElementById('setLogExpand').checked;
             autoShowSummary = document.getElementById('setAutoSummary').checked;
-            localStorage.setItem('gantt_auto_summary', autoShowSummary);
             
-            applyOwnerColorsToTasks();
+            applyOwnerColorsToTasks(true);
             applyLogBtnStyle();
-            saveDataLocal();
+            if (!saveDataLocal()) {
+                restoreDataState(beforeState);
+                try {
+                    if (previousAutoSummary === null) localStorage.removeItem('gantt_auto_summary');
+                    else localStorage.setItem('gantt_auto_summary', previousAutoSummary);
+                } catch (e) {}
+                applyLogBtnStyle();
+                renderFilterButtons();
+                renderApp();
+                renderLogs();
+                renderSmartLogForm();
+                showToast('保存失败：浏览器存储空间不足，设置未生效', 'error');
+                return;
+            }
+            try { localStorage.setItem('gantt_auto_summary', autoShowSummary); } catch (e) {}
             scheduleCloudSync();
             setupCombobox('owner', getOwnerColorMap());
             setupCombobox('qaOwner', getOwnerColorMap());
@@ -853,12 +906,117 @@
             }
         }
 
-        function applyOwnerColorsToTasks() {
+        function cloneJson(value) {
+            return JSON.parse(JSON.stringify(value));
+        }
+
+        let syncMeta = { revision: 0, ownerOrderUpdatedAt: 0, deletedTasks: {}, deletedLogs: {} };
+        let syncInFlight = null;
+
+        function normalizeSyncMeta(meta) {
+            const value = meta && typeof meta === 'object' ? meta : {};
+            return {
+                revision: Number.isFinite(Number(value.revision)) ? Number(value.revision) : 0,
+                ownerOrderUpdatedAt: Number.isFinite(Number(value.ownerOrderUpdatedAt)) ? Number(value.ownerOrderUpdatedAt) : 0,
+                deletedTasks: value.deletedTasks && typeof value.deletedTasks === 'object' ? cloneJson(value.deletedTasks) : {},
+                deletedLogs: value.deletedLogs && typeof value.deletedLogs === 'object' ? cloneJson(value.deletedLogs) : {}
+            };
+        }
+
+        function entityUpdatedAt(item) {
+            const value = Number(item && item._updatedAt);
+            return Number.isFinite(value) ? value : 0;
+        }
+
+        function normalizeEntityTimestamps() {
+            tasks.forEach(t => {
+                if (!Number.isFinite(Number(t._updatedAt))) t._updatedAt = 0;
+            });
+            dailyLogs.forEach(l => {
+                if (!Number.isFinite(Number(l._updatedAt))) l._updatedAt = 0;
+            });
+        }
+
+        function touchTask(task, ts = Date.now()) {
+            if (!task) return;
+            task._updatedAt = ts;
+            if (syncMeta.deletedTasks[task.id] && ts > Number(syncMeta.deletedTasks[task.id])) delete syncMeta.deletedTasks[task.id];
+        }
+
+        function touchLog(log, ts = Date.now()) {
+            if (!log) return;
+            log._updatedAt = ts;
+            if (syncMeta.deletedLogs[log.id] && ts > Number(syncMeta.deletedLogs[log.id])) delete syncMeta.deletedLogs[log.id];
+        }
+
+        function touchOwnerOrder(ts = Date.now()) {
+            syncMeta.ownerOrderUpdatedAt = Math.max(Number(syncMeta.ownerOrderUpdatedAt) || 0, ts);
+        }
+
+        function markTaskDeleted(id, ts = Date.now()) {
+            if (!id) return;
+            syncMeta.deletedTasks[id] = Math.max(Number(syncMeta.deletedTasks[id]) || 0, ts);
+        }
+
+        function markLogDeleted(id, ts = Date.now()) {
+            if (!id) return;
+            syncMeta.deletedLogs[id] = Math.max(Number(syncMeta.deletedLogs[id]) || 0, ts);
+        }
+
+        function captureDataState() {
+            return {
+                tasks: cloneJson(tasks),
+                dailyLogs: cloneJson(dailyLogs),
+                ownerOrder: cloneJson(ownerOrder),
+                syncMeta: cloneJson(syncMeta),
+                todayBgColor,
+                logBgColor,
+                defaultLogExpand,
+                autoShowSummary,
+                currentOwnerFilter
+            };
+        }
+
+        function restoreDataState(snapshot) {
+            if (!snapshot) return;
+            tasks = cloneJson(snapshot.tasks);
+            dailyLogs = cloneJson(snapshot.dailyLogs);
+            ownerOrder = cloneJson(snapshot.ownerOrder);
+            syncMeta = normalizeSyncMeta(snapshot.syncMeta);
+            todayBgColor = snapshot.todayBgColor;
+            logBgColor = snapshot.logBgColor;
+            defaultLogExpand = snapshot.defaultLogExpand;
+            autoShowSummary = snapshot.autoShowSummary;
+            currentOwnerFilter = snapshot.currentOwnerFilter;
+        }
+
+        function applyOwnerColorsToTasks(touchChanged = false) {
             const map = getOwnerColorMap();
             tasks.forEach(t => {
-                if (t.owner === '共同') t.owner = '公共'; 
-                if (map[t.owner]) t.color = map[t.owner];
+                if (t.owner === '共同') {
+                    t.owner = '公共';
+                    if (touchChanged) touchTask(t);
+                }
+                if (map[t.owner] && t.color !== map[t.owner]) {
+                    t.color = map[t.owner];
+                    if (touchChanged) touchTask(t);
+                }
             });
+        }
+
+        function ensureOwnerCoverage(markUpdated = false) {
+            const map = getOwnerColorMap();
+            let changed = false;
+            tasks.forEach(t => {
+                if (t.owner && !map[t.owner]) {
+                    const color = t.color || '#94a3b8';
+                    ownerOrder.push({ name: t.owner, color });
+                    map[t.owner] = color;
+                    changed = true;
+                }
+            });
+            if (changed && markUpdated) touchOwnerOrder();
+            return changed;
         }
         
         function updateSyncUI(statusStr) {
@@ -870,17 +1028,176 @@
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_0_2px_rgba(52,211,153,0.2)]"></span> <span class="text-gray-500">已同步</span>`;
             } else if(statusStr === 'pending') {
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_0_2px_rgba(250,204,21,0.2)]"></span> <span class="text-yellow-600">待同步</span>`;
+            } else if(statusStr === 'conflict') {
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> <span class="text-amber-600">同步冲突，待重试</span>`;
             } else if(statusStr === 'error') {
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> <span class="text-red-500">断网</span>`;
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> <span class="text-red-500">同步失败</span>`;
             }
         }
 
-        function saveDataLocal() {
-            applyOwnerColorsToTasks();
-            localStorage.setItem('gantt_data_tasks', JSON.stringify(tasks));
-            localStorage.setItem('gantt_data_logs', JSON.stringify(dailyLogs));
-            localStorage.setItem('gantt_data_owners', JSON.stringify(ownerOrder));
-            updateSyncUI('pending');
+        function saveDataLocal(markPending = true) {
+            normalizeEntityTimestamps();
+            applyOwnerColorsToTasks(false);
+            const previousMeta = cloneJson(syncMeta);
+            if (markPending) syncMeta.revision = Math.max(Number(syncMeta.revision) || 0, 0) + 1;
+            const keys = ['gantt_data_logs', 'gantt_data_tasks', 'gantt_data_owners', 'gantt_sync_meta', 'gantt_sync_pending'];
+            const previous = {};
+            keys.forEach(key => { previous[key] = localStorage.getItem(key); });
+            try {
+                localStorage.setItem('gantt_sync_pending', markPending ? 'true' : 'false');
+                localStorage.setItem('gantt_data_logs', JSON.stringify(dailyLogs));
+                localStorage.setItem('gantt_data_tasks', JSON.stringify(tasks));
+                localStorage.setItem('gantt_data_owners', JSON.stringify(ownerOrder));
+                localStorage.setItem('gantt_sync_meta', JSON.stringify(syncMeta));
+                updateSyncUI(markPending ? 'pending' : 'synced');
+                return true;
+            } catch (error) {
+                syncMeta = normalizeSyncMeta(previousMeta);
+                keys.forEach(key => {
+                    try {
+                        if (previous[key] === null) localStorage.removeItem(key);
+                        else localStorage.setItem(key, previous[key]);
+                    } catch (restoreError) {}
+                });
+                console.error('Local save failed:', error);
+                updateSyncUI('error');
+                return false;
+            }
+        }
+
+        function loadLocalData() {
+            try {
+                const localTasks = localStorage.getItem('gantt_data_tasks');
+                const localLogs = localStorage.getItem('gantt_data_logs');
+                const localOwners = localStorage.getItem('gantt_data_owners');
+                const localMeta = localStorage.getItem('gantt_sync_meta');
+                const hasLocal = !!(localTasks || localLogs || localOwners);
+                if(localTasks) tasks = JSON.parse(localTasks);
+                if(localLogs) dailyLogs = JSON.parse(localLogs);
+                if(localOwners) {
+                    const parsedOwners = JSON.parse(localOwners);
+                    if(parsedOwners.length > 0) ownerOrder = parsedOwners;
+                }
+                syncMeta = normalizeSyncMeta(localMeta ? JSON.parse(localMeta) : null);
+                normalizeEntityTimestamps();
+                return hasLocal;
+            } catch (error) {
+                console.error('Local data load failed:', error);
+                return false;
+            }
+        }
+
+        function mergeTimestampMaps(localMap, remoteMap) {
+            const merged = {};
+            [remoteMap || {}, localMap || {}].forEach(source => {
+                Object.keys(source).forEach(id => {
+                    const ts = Number(source[id]) || 0;
+                    merged[id] = Math.max(Number(merged[id]) || 0, ts);
+                });
+            });
+            return merged;
+        }
+
+        function mergeEntityCollections(localItems, remoteItems, tombstones) {
+            const map = new Map();
+            (remoteItems || []).forEach(item => {
+                if (!item || item.id === undefined || item.id === null) return;
+                map.set(String(item.id), cloneJson(item));
+            });
+            (localItems || []).forEach(item => {
+                if (!item || item.id === undefined || item.id === null) return;
+                const id = String(item.id);
+                const existing = map.get(id);
+                if (!existing || entityUpdatedAt(item) >= entityUpdatedAt(existing)) map.set(id, cloneJson(item));
+            });
+            for (const [id, item] of map.entries()) {
+                const deletedAt = Number(tombstones[id]) || 0;
+                const updatedAt = entityUpdatedAt(item);
+                if (deletedAt && deletedAt >= updatedAt) {
+                    map.delete(id);
+                } else if (deletedAt && updatedAt > deletedAt) {
+                    delete tombstones[id];
+                }
+            }
+            return Array.from(map.values());
+        }
+
+        function mergeCloudRecord(record) {
+            const remote = record && typeof record === 'object' ? record : {};
+            const remoteMeta = normalizeSyncMeta(remote.syncMeta);
+            syncMeta.deletedTasks = mergeTimestampMaps(syncMeta.deletedTasks, remoteMeta.deletedTasks);
+            syncMeta.deletedLogs = mergeTimestampMaps(syncMeta.deletedLogs, remoteMeta.deletedLogs);
+            tasks = mergeEntityCollections(tasks, Array.isArray(remote.tasks) ? remote.tasks : [], syncMeta.deletedTasks);
+            dailyLogs = mergeEntityCollections(dailyLogs, Array.isArray(remote.logs) ? remote.logs : [], syncMeta.deletedLogs);
+            const remoteOwnerOrder = Array.isArray(remote.ownerOrder) ? remote.ownerOrder : [];
+            if (remoteMeta.ownerOrderUpdatedAt > Number(syncMeta.ownerOrderUpdatedAt || 0)) {
+                ownerOrder = cloneJson(remoteOwnerOrder);
+                syncMeta.ownerOrderUpdatedAt = remoteMeta.ownerOrderUpdatedAt;
+            } else if ((!ownerOrder || ownerOrder.length === 0) && remoteOwnerOrder.length) {
+                ownerOrder = cloneJson(remoteOwnerOrder);
+            }
+            syncMeta.revision = Math.max(Number(syncMeta.revision) || 0, remoteMeta.revision);
+            normalizeEntityTimestamps();
+            ensureOwnerCoverage(true);
+            applyOwnerColorsToTasks(false);
+        }
+
+        function applyCloudRecordDirect(record) {
+            const remote = record && typeof record === 'object' ? record : {};
+            tasks = Array.isArray(remote.tasks) ? cloneJson(remote.tasks) : [];
+            dailyLogs = Array.isArray(remote.logs) ? cloneJson(remote.logs) : [];
+            ownerOrder = Array.isArray(remote.ownerOrder) ? cloneJson(remote.ownerOrder) : [];
+            syncMeta = normalizeSyncMeta(remote.syncMeta);
+            normalizeEntityTimestamps();
+            ensureOwnerCoverage(false);
+            applyOwnerColorsToTasks(false);
+        }
+
+        function buildSyncPayload() {
+            return { tasks, logs: dailyLogs, ownerOrder, syncMeta };
+        }
+
+        function recordsEqualAtSameTimestamp(a, b) {
+            try { return JSON.stringify(a) === JSON.stringify(b); }
+            catch (e) { return false; }
+        }
+
+        function cloudCoversLocal(record) {
+            const remote = record && typeof record === 'object' ? record : {};
+            const remoteMeta = normalizeSyncMeta(remote.syncMeta);
+            const remoteTasks = new Map((Array.isArray(remote.tasks) ? remote.tasks : []).map(item => [String(item.id), item]));
+            const remoteLogs = new Map((Array.isArray(remote.logs) ? remote.logs : []).map(item => [String(item.id), item]));
+            for (const item of tasks) {
+                const remoteItem = remoteTasks.get(String(item.id));
+                if (!remoteItem) return false;
+                const localTs = entityUpdatedAt(item);
+                const remoteTs = entityUpdatedAt(remoteItem);
+                if (remoteTs < localTs) return false;
+                if (remoteTs === localTs && !recordsEqualAtSameTimestamp(remoteItem, item)) return false;
+            }
+            for (const item of dailyLogs) {
+                const remoteItem = remoteLogs.get(String(item.id));
+                if (!remoteItem) return false;
+                const localTs = entityUpdatedAt(item);
+                const remoteTs = entityUpdatedAt(remoteItem);
+                if (remoteTs < localTs) return false;
+                if (remoteTs === localTs && !recordsEqualAtSameTimestamp(remoteItem, item)) return false;
+            }
+            for (const [id, ts] of Object.entries(syncMeta.deletedTasks || {})) {
+                if ((Number(remoteMeta.deletedTasks[id]) || 0) < Number(ts || 0)) return false;
+            }
+            for (const [id, ts] of Object.entries(syncMeta.deletedLogs || {})) {
+                if ((Number(remoteMeta.deletedLogs[id]) || 0) < Number(ts || 0)) return false;
+            }
+            if ((Number(remoteMeta.ownerOrderUpdatedAt) || 0) < (Number(syncMeta.ownerOrderUpdatedAt) || 0)) return false;
+            return true;
+        }
+
+        async function fetchCloudRecord() {
+            const response = await fetch('/api/sync', { method: 'GET', cache: 'no-store' });
+            if (!response.ok) throw new Error('API GET Error');
+            const result = await response.json();
+            return result && result.record ? result.record : {};
         }
 
         async function scheduleCloudSync() {
@@ -889,40 +1206,67 @@
         }
 
         async function forceCloudSync() {
-            updateSyncUI('syncing');
-            try {
-                const response = await fetch('/api/sync', {
-                    method: 'PUT',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ tasks, logs: dailyLogs, ownerOrder })
-                });
-                if(response.ok) updateSyncUI('synced');
-                else throw new Error("API Error");
-            } catch (error) {
-                updateSyncUI('error');
-            }
+            if (syncInFlight) return syncInFlight;
+            syncInFlight = (async () => {
+                updateSyncUI('syncing');
+                try {
+                    for (let round = 0; round < 3; round++) {
+                        const remoteBefore = await fetchCloudRecord();
+                        const beforeMerge = captureDataState();
+                        mergeCloudRecord(remoteBefore);
+                        if (!saveDataLocal(true)) {
+                            restoreDataState(beforeMerge);
+                            throw new Error('LOCAL_SAVE_FAILED');
+                        }
+
+                        const response = await fetch('/api/sync', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(buildSyncPayload())
+                        });
+                        if(!response.ok) throw new Error('API PUT Error');
+
+                        const remoteAfter = await fetchCloudRecord();
+                        if (cloudCoversLocal(remoteAfter)) {
+                            mergeCloudRecord(remoteAfter);
+                            if (!saveDataLocal(false)) throw new Error('LOCAL_SAVE_FAILED_AFTER_SYNC');
+                            updateSyncUI('synced');
+                            return true;
+                        }
+
+                        mergeCloudRecord(remoteAfter);
+                        if (!saveDataLocal(true)) throw new Error('LOCAL_SAVE_FAILED_DURING_RETRY');
+                    }
+                    updateSyncUI('conflict');
+                    try { localStorage.setItem('gantt_sync_pending', 'true'); } catch (e) {}
+                    return false;
+                } catch (error) {
+                    console.error('Cloud sync failed:', error);
+                    try { localStorage.setItem('gantt_sync_pending', 'true'); } catch (e) {}
+                    updateSyncUI('error');
+                    return false;
+                } finally {
+                    syncInFlight = null;
+                }
+            })();
+            return syncInFlight;
         }
 
         async function pullDataInit() {
-            updateSyncUI('syncing');
-            try {
-                const response = await fetch('/api/sync');
-                const result = await response.json();
-                if (result.record) {
-                    if (result.record.tasks) tasks = result.record.tasks;
-                    if (result.record.logs) dailyLogs = result.record.logs;
-                    if (result.record.ownerOrder && result.record.ownerOrder.length > 0) ownerOrder = result.record.ownerOrder;
-                }
-                saveDataLocal();
-                updateSyncUI('synced');
-            } catch (error) {
-                const localTasks = localStorage.getItem('gantt_data_tasks');
-                const localLogs = localStorage.getItem('gantt_data_logs');
-                const localOwners = localStorage.getItem('gantt_data_owners');
-                if(localTasks) tasks = JSON.parse(localTasks);
-                if(localLogs) dailyLogs = JSON.parse(localLogs);
-                if(localOwners && JSON.parse(localOwners).length > 0) ownerOrder = JSON.parse(localOwners);
+            const hasPendingLocal = localStorage.getItem('gantt_sync_pending') === 'true';
+            if (hasPendingLocal && loadLocalData()) {
                 updateSyncUI('pending');
+                await forceCloudSync();
+            } else {
+                updateSyncUI('syncing');
+                try {
+                    const record = await fetchCloudRecord();
+                    applyCloudRecordDirect(record);
+                    if(!saveDataLocal(false)) updateSyncUI('error');
+                } catch (error) {
+                    loadLocalData();
+                    updateSyncUI('error');
+                }
             }
             
             if (!ownerOrder || ownerOrder.length === 0) {
@@ -930,18 +1274,10 @@
             }
             
             tasks.forEach(t => { if(t.category !== undefined) delete t.category; });
-            applyOwnerColorsToTasks(); 
+            applyOwnerColorsToTasks(false); 
+            ensureOwnerCoverage(false);
             
-            let existingOwners = new Set();
-            tasks.forEach(t => { if(t.owner) existingOwners.add(t.owner); });
             const map = getOwnerColorMap();
-            existingOwners.forEach(o => { 
-                if(!map[o]) {
-                    ownerOrder.push({name: o, color: '#94a3b8'});
-                    map[o] = '#94a3b8';
-                }
-            });
-            
             setupCombobox('owner', map);
             setupCombobox('qaOwner', map);
             renderFilterButtons();
@@ -973,16 +1309,23 @@
             if (new Date(start) > new Date(end)) {
                 showToast('开始不能晚于结束！', 'error'); return;
             }
-            tasks.push({ id: Date.now().toString(), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false });
+            const beforeState = captureDataState();
+            const now = Date.now();
+            tasks.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false, _updatedAt: now });
             if (!map[owner]) {
                 ownerOrder.push({name: owner, color});
-                renderFilterButtons();
-                setupCombobox('owner', getOwnerColorMap());
-                setupCombobox('qaOwner', getOwnerColorMap());
+                touchOwnerOrder(now);
             }
             shouldScrollToToday = true;
-            saveDataLocal();
+            if (!saveDataLocal()) {
+                restoreDataState(beforeState);
+                showToast('保存失败：浏览器存储空间不足，任务未添加', 'error');
+                return;
+            }
             scheduleCloudSync();
+            renderFilterButtons();
+            setupCombobox('owner', getOwnerColorMap());
+            setupCombobox('qaOwner', getOwnerColorMap());
             renderApp();
             document.getElementById('taskName').value = '';
             document.getElementById('taskDetails').innerHTML = '';
@@ -1008,15 +1351,22 @@
             if (new Date(start) > new Date(end)) {
                 showToast('开始不能晚于结束！', 'error'); return;
             }
-            tasks.push({ id: Date.now().toString(), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false });
+            const beforeState = captureDataState();
+            const now = Date.now();
+            tasks.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false, _updatedAt: now });
             if (!map[owner]) {
                 ownerOrder.push({name: owner, color});
-                renderFilterButtons();
-                setupCombobox('owner', getOwnerColorMap());
-                setupCombobox('qaOwner', getOwnerColorMap());
+                touchOwnerOrder(now);
             }
-            saveDataLocal();
+            if (!saveDataLocal()) {
+                restoreDataState(beforeState);
+                showToast('保存失败：浏览器存储空间不足，排期未添加', 'error');
+                return;
+            }
             scheduleCloudSync();
+            renderFilterButtons();
+            setupCombobox('owner', getOwnerColorMap());
+            setupCombobox('qaOwner', getOwnerColorMap());
             renderApp();
             document.getElementById('quickAddModal').classList.add('hidden');
             showToast('排期快捷添加成功');
@@ -1051,8 +1401,10 @@
                 if (new Date(s) > new Date(en)) {
                     showToast('开始不能晚于结束', 'error'); return;
                 }
+                const beforeState = captureDataState();
                 const wasCompleted = task.completed;
                 const isNowCompleted = document.getElementById('editCompleted').checked;
+                const now = Date.now();
                 
                 task.name = document.getElementById('editTaskName').value.trim();
                 let det = document.getElementById('editTaskDetails').innerHTML.trim();
@@ -1063,24 +1415,38 @@
                 task.owner = owner;
                 task.start = s;
                 task.end = en;
+                touchTask(task, now);
                 
                 const map = getOwnerColorMap();
                 if (!map[owner]) {
                     ownerOrder.push({name: owner, color: '#94a3b8'});
-                    renderFilterButtons();
+                    touchOwnerOrder(now);
                 }
 
                 if (!wasCompleted && isNowCompleted) {
                     task.completed = false;
-                    saveDataLocal();
+                    if (!saveDataLocal()) {
+                        restoreDataState(beforeState);
+                        showToast('保存失败：浏览器存储空间不足，修改未生效', 'error');
+                        renderApp();
+                        return;
+                    }
                     scheduleCloudSync();
+                    renderFilterButtons();
                     renderApp();
                     closeEditModal();
                     toggleComplete(task.id); 
                 } else {
                     task.completed = isNowCompleted;
-                    saveDataLocal();
+                    touchTask(task, now);
+                    if (!saveDataLocal()) {
+                        restoreDataState(beforeState);
+                        showToast('保存失败：浏览器存储空间不足，修改未生效', 'error');
+                        renderApp();
+                        return;
+                    }
                     scheduleCloudSync();
+                    renderFilterButtons();
                     renderApp();
                     closeEditModal();
                     showToast('修改成功');
@@ -1126,40 +1492,46 @@
             if (dragInfo.deltaDays !== 0) {
                 const task = tasks.find(t => t.id === dragInfo.taskId);
                 if (task) {
+                    const beforeState = captureDataState();
+                    const now = Date.now();
                     const eParts = task.end.split('-');
                     const ed = new Date(eParts[0], eParts[1] - 1, eParts[2]);
                     const sParts = task.start.split('-');
                     const sd = new Date(sParts[0], sParts[1] - 1, sParts[2]);
                     
+                    const persistDateChange = () => {
+                        touchTask(task, now);
+                        if (!saveDataLocal()) {
+                            restoreDataState(beforeState);
+                            renderApp();
+                            renderSmartLogForm();
+                            showToast('保存失败：日期修改未生效', 'error');
+                            return false;
+                        }
+                        scheduleCloudSync();
+                        renderApp();
+                        showToast('日期已更新');
+                        renderSmartLogForm();
+                        return true;
+                    };
+
                     if (dragInfo.side === 'move') {
                         sd.setDate(sd.getDate() + dragInfo.deltaDays);
                         ed.setDate(ed.getDate() + dragInfo.deltaDays);
                         task.start = formatDate(sd);
                         task.end = formatDate(ed);
-                        saveDataLocal();
-                        scheduleCloudSync();
-                        renderApp();
-                        showToast('日期已更新');
-                        renderSmartLogForm();
+                        persistDateChange();
                     } else if (dragInfo.side === 'left') {
                         sd.setDate(sd.getDate() + dragInfo.deltaDays);
                         if (sd <= ed) {
                             task.start = formatDate(sd);
-                            saveDataLocal();
-                            scheduleCloudSync();
-                            renderApp();
-                            showToast('日期已更新');
-                            renderSmartLogForm();
+                            persistDateChange();
                         } else renderApp();
                     } else {
                         ed.setDate(ed.getDate() + dragInfo.deltaDays);
                         if (ed >= sd) {
                             task.end = formatDate(ed);
-                            saveDataLocal();
-                            scheduleCloudSync();
-                            renderApp();
-                            showToast('日期已更新');
-                            renderSmartLogForm();
+                            persistDateChange();
                         } else renderApp();
                     }
                 } else renderApp();
@@ -1177,10 +1549,19 @@
         });
 
         window.deleteTask = function(id) {
+            const beforeState = captureDataState();
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            markTaskDeleted(id);
             tasks = tasks.filter(t => t.id !== id);
-            renderApp();
-            saveDataLocal();
+            if (!saveDataLocal()) {
+                restoreDataState(beforeState);
+                renderApp();
+                showToast('保存失败：任务未删除', 'error');
+                return;
+            }
             scheduleCloudSync();
+            renderApp();
             showToast('已删除');
             renderSmartLogForm();
         };
@@ -1189,10 +1570,17 @@
             const task = tasks.find(t => t.id === id);
             if (task) {
                 if(task.completed){
+                    const beforeState = captureDataState();
                     task.completed = false;
-                    renderApp();
-                    saveDataLocal();
+                    touchTask(task);
+                    if (!saveDataLocal()) {
+                        restoreDataState(beforeState);
+                        renderApp();
+                        showToast('保存失败：任务状态未修改', 'error');
+                        return;
+                    }
                     scheduleCloudSync();
+                    renderApp();
                     renderSmartLogForm();
                     renderLogs();
                 } else {
@@ -1211,10 +1599,17 @@
         };
 
         window.saveQuickComplete = function() {
+            if (pendingImagePasteCount > 0) {
+                showToast('图片正在处理中，请等图片显示后再保存', 'error');
+                return;
+            }
             const id = document.getElementById('quickCompleteTaskId').value;
             const task = tasks.find(t => t.id === id);
             if (task) {
+                const beforeState = captureDataState();
+                const now = Date.now();
                 task.completed = true;
+                touchTask(task, now);
                 const compVal = document.getElementById('quickCompleteComp').value.trim();
                 let richHtml = document.getElementById('quickCompleteRich').innerHTML.trim();
                 richHtml = makeLinksClickable(richHtml);
@@ -1225,17 +1620,18 @@
                     contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${richHtml}</div>`;
                 }
                 
-                let existingLog = dailyLogs.find(l => l.owner === task.owner && l.date === todayStr);
-                if (existingLog) {
-                    existingLog.content += '\n\n' + contentStr;
-                } else {
-                    dailyLogs.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), owner: task.owner, date: todayStr, content: contentStr });
-                }
+                dailyLogs.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), owner: task.owner, date: todayStr, content: contentStr, _updatedAt: now });
                 
+                if (!saveDataLocal()) {
+                    restoreDataState(beforeState);
+                    showToast('保存失败：完成状态和记录均未生效', 'error');
+                    renderApp();
+                    renderLogs();
+                    return;
+                }
+                scheduleCloudSync();
                 document.getElementById('quickCompleteModal').classList.add('hidden');
                 renderApp();
-                saveDataLocal();
-                scheduleCloudSync();
                 renderLogs();
                 renderSmartLogForm();
                 showToast('已完成并记录！');
@@ -1269,6 +1665,84 @@
             }
         };
 
+        function getTaskCompletionInfo(task) {
+            let matches = [];
+            dailyLogs.forEach(log => {
+                if (log.owner !== task.owner || !log.content) return;
+                log.content.split('\n\n').forEach(entry => {
+                    const nameMatch = entry.match(/• 【(.*?)】/);
+                    const statusMatch = entry.match(/\[(.*?)\]/);
+                    if (nameMatch && statusMatch && nameMatch[1] === task.name && statusMatch[1] === '已完成') {
+                        matches.push({ date: log.date || '', entry });
+                    }
+                });
+            });
+            matches.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+            if (!matches.length) return null;
+            const latest = matches[0];
+            const progressMatch = latest.entry.match(/进度: (.*?)。/);
+            const richMatch = latest.entry.match(/<div[^>]*>([\s\S]*)<\/div>$/);
+            return {
+                date: latest.date,
+                progress: progressMatch ? progressMatch[1] : '',
+                rich: richMatch ? richMatch[1] : ''
+            };
+        }
+
+        function completionSummaryText(info) {
+            if (!info) return '暂无对应的完成记录';
+            let parts = [];
+            if (info.progress) parts.push('进度 ' + info.progress);
+            if (info.rich) {
+                const temp = document.createElement('div');
+                temp.innerHTML = info.rich;
+                const text = (temp.textContent || '').replace(/\s+/g, ' ').trim();
+                if (text) parts.push(text);
+                else if (temp.querySelector('img')) parts.push('包含完成图片');
+            }
+            return parts.length ? parts.join(' · ') : '已完成，无补充说明';
+        }
+
+        window.openCompletedDetail = function(taskId) {
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            const info = getTaskCompletionInfo(task);
+            document.getElementById('completedDetailTitle').textContent = task.name;
+            document.getElementById('completedDetailOwner').textContent = task.owner || '未分配';
+            document.getElementById('completedDetailSchedule').textContent = `${task.start} ~ ${task.end}`;
+            document.getElementById('completedDetailTaskDetails').innerHTML = task.details ? task.details : '<span class="text-gray-400">暂无原任务细节</span>';
+            document.getElementById('completedDetailDate').textContent = info && info.date ? `完成于 ${info.date}` : '未找到完成日期';
+            const progressEl = document.getElementById('completedDetailProgress');
+            if (info && info.progress) {
+                progressEl.textContent = `完成度：${info.progress}`;
+                progressEl.classList.remove('hidden');
+            } else {
+                progressEl.textContent = '';
+                progressEl.classList.add('hidden');
+            }
+            const richEl = document.getElementById('completedDetailRich');
+            if (info && info.rich) {
+                richEl.innerHTML = info.rich;
+            } else if (info) {
+                richEl.innerHTML = '<span class="text-gray-400">本次完成没有补充说明或图片</span>';
+            } else {
+                richEl.innerHTML = '<span class="text-gray-400">该任务已处于完成状态，但历史每日进度中没有找到对应的“已完成”记录。</span>';
+            }
+            document.getElementById('completedRestoreBtn').onclick = () => {
+                closeCompletedDetail();
+                toggleComplete(task.id);
+            };
+            document.getElementById('completedEditBtn').onclick = () => {
+                closeCompletedDetail();
+                openEditModal(task.id);
+            };
+            document.getElementById('completedDetailModal').classList.remove('hidden');
+        };
+
+        window.closeCompletedDetail = function() {
+            document.getElementById('completedDetailModal').classList.add('hidden');
+        };
+
         function renderCompletedDrawer() {
             const list = document.getElementById('completedDrawerList');
             const badgeFloat = document.getElementById('completedBadgeFloat');
@@ -1284,16 +1758,26 @@
                 return;
             }
             
-            completedTasks.sort((a,b) => new Date(b.end) - new Date(a.end)).forEach(task => {
+            completedTasks.sort((a,b) => {
+                const ai = getTaskCompletionInfo(a);
+                const bi = getTaskCompletionInfo(b);
+                return ((bi && bi.date) || b.end || '').localeCompare((ai && ai.date) || a.end || '');
+            }).forEach(task => {
+                const info = getTaskCompletionInfo(task);
+                const summary = completionSummaryText(info);
+                const displayDate = info && info.date ? info.date.substring(5) : task.end.substring(5);
                 const item = document.createElement('div');
-                item.className = 'bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 transition-all cursor-pointer opacity-70 hover:opacity-100 flex flex-col gap-2 shrink-0';
-                item.onclick = (e) => { if(e.target.type !== 'checkbox') openEditModal(task.id); };
+                item.className = 'bg-white p-3 rounded-xl border border-gray-200 shadow-sm hover:border-indigo-300 hover:shadow-md transition-all cursor-pointer flex flex-col gap-2.5 shrink-0';
+                item.onclick = (e) => { if(e.target.type !== 'checkbox') openCompletedDetail(task.id); };
                 item.innerHTML = `
                     <div class="flex items-center gap-2.5 min-w-0">
                         <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 shrink-0" onchange="toggleComplete('${task.id}')">
-                        <div class="text-[13px] font-bold text-gray-500 line-through truncate flex-1 leading-snug">${highlightText(task.name)}</div>
+                        <div class="text-[13px] font-bold text-gray-600 line-through truncate flex-1 leading-snug">${highlightText(task.name)}</div>
                         <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"><div class="w-1.5 h-1.5 rounded-full" style="background-color:${task.color}"></div>${task.owner}</span>
-                        <span class="text-[10px] font-medium text-gray-400 shrink-0">${task.end.substring(5)}</span>
+                    </div>
+                    <div class="pl-[26px] flex items-start justify-between gap-3">
+                        <div class="text-[11px] text-gray-500 leading-relaxed line-clamp-2 min-w-0 flex-1">${summary}</div>
+                        <span class="text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-100 px-1.5 py-0.5 rounded shrink-0">${displayDate}</span>
                     </div>
                 `;
                 list.appendChild(item);
@@ -1445,6 +1929,7 @@
 
             const displayTasks = currentOwnerFilter === 'all' ? tasks : tasks.filter(t => t.owner === currentOwnerFilter);
             const filteredTasks = displayTasks.filter(matchSearch);
+            const allActiveTasks = displayTasks.filter(t => !t.completed);
             const activeTasks = filteredTasks.filter(t => !t.completed);
             
             const parts = todayStr.split('-');
@@ -1519,12 +2004,19 @@
                 headerDay.setDate(headerDay.getDate() + 1);
             }
             
-            if (activeTasks.length > 0) {
+            {
                 const grouped = groupBy(activeTasks, 'owner');
+                const groupedAllActive = groupBy(allActiveTasks, 'owner');
                 const map = getOwnerColorMap();
+                let renderedOwnerRows = 0;
                 ownerOrder.forEach(o => {
                     const owner = o.name;
-                    if(!grouped[owner]) return;
+                    if (currentOwnerFilter !== 'all' && owner !== currentOwnerFilter) return;
+                    const ownerVisibleTasks = grouped[owner] || [];
+                    const ownerAllActiveTasks = groupedAllActive[owner] || [];
+                    const shouldRenderEmptyOwner = ownerAllActiveTasks.length === 0;
+                    if (!shouldRenderEmptyOwner && ownerVisibleTasks.length === 0) return;
+                    renderedOwnerRows++;
                     
                     const catRowTrack = document.createElement('div');
                     catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-10 py-1.5';
@@ -1532,7 +2024,22 @@
                     catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
                     wrap.appendChild(catRowTrack);
 
-                    grouped[owner].sort((a,b) => taskSorter(a, b)).forEach(task => {
+                    if (shouldRenderEmptyOwner) {
+                        let emptyDay = new Date(renderMinDate);
+                        for (let i = 0; i < totalDays; i++) {
+                            const cell = document.createElement('div');
+                            const currentDateStr = formatDate(emptyDay);
+                            cell.className = 'border-b border-r border-gray-100 relative h-[34px] bg-transparent hover:bg-indigo-50/30 transition-colors';
+                            cell.setAttribute('data-date', currentDateStr);
+                            cell.setAttribute('data-owner', owner);
+                            cell.setAttribute('title', '右键添加排期');
+                            wrap.appendChild(cell);
+                            emptyDay.setDate(emptyDay.getDate() + 1);
+                        }
+                        return;
+                    }
+
+                    ownerVisibleTasks.sort((a,b) => taskSorter(a, b)).forEach(task => {
                         const tParts = task.start.split('-');
                         const taskStart = new Date(tParts[0], tParts[1] - 1, tParts[2]);
                         const eParts = task.end.split('-');
@@ -1568,6 +2075,7 @@
                             const currentDateStr = formatDate(currentDay);
                             cell.className = `border-b border-r border-gray-100 relative h-[46px] bg-transparent`;
                             cell.setAttribute('data-date', currentDateStr);
+                            cell.setAttribute('data-owner', owner);
                             
                             if (i === startIndex && visibleDuration > 0) {
                                 const bar = document.createElement('div');
@@ -1647,12 +2155,14 @@
                         }
                     });
                 });
-            } else {
-                const emptyRow = document.createElement('div');
-                emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm border-b border-gray-100 flex items-center justify-center z-10 relative bg-transparent';
-                emptyRow.style.gridColumn = '1 / -1';
-                emptyRow.innerHTML = '暂无活跃排期，尽情享受清空任务的快乐吧！🎉';
-                wrap.appendChild(emptyRow);
+
+                if (renderedOwnerRows === 0) {
+                    const emptyRow = document.createElement('div');
+                    emptyRow.className = 'col-span-full text-center text-gray-400 py-12 text-sm border-b border-gray-100 flex items-center justify-center z-10 relative bg-transparent';
+                    emptyRow.style.gridColumn = '1 / -1';
+                    emptyRow.innerHTML = searchQuery ? '没有找到匹配的活跃排期' : '暂无可显示的排期';
+                    wrap.appendChild(emptyRow);
+                }
             }
             
             wrapWrapper.appendChild(wrap);
@@ -1975,9 +2485,25 @@
             }
         };
 
-        function saveLocalDraft(key, content) { localStorage.setItem('gantt_draft_' + key, content); }
-        function getLocalDraft(key) { return localStorage.getItem('gantt_draft_' + key) || ''; }
-        function clearLocalDraft(key) { localStorage.removeItem('gantt_draft_' + key); }
+        function saveLocalDraft(key, content) {
+            try {
+                localStorage.setItem('gantt_draft_' + key, content);
+            } catch (error) {
+                try {
+                    const temp = document.createElement('div');
+                    temp.innerHTML = content;
+                    temp.querySelectorAll('img').forEach(img => img.remove());
+                    localStorage.setItem('gantt_draft_' + key, temp.innerHTML);
+                } catch (e) {}
+            }
+        }
+        function getLocalDraft(key) {
+            try { return localStorage.getItem('gantt_draft_' + key) || ''; }
+            catch (error) { return ''; }
+        }
+        function clearLocalDraft(key) {
+            try { localStorage.removeItem('gantt_draft_' + key); } catch (error) {}
+        }
 
         window.renderSmartLogForm = function() {
             const dateInput = document.getElementById('smartLogDateInput').value;
@@ -2102,10 +2628,16 @@
         }
 
         window.submitSmartLogs = function() {
+            if (pendingImagePasteCount > 0) {
+                showToast('图片正在处理中，请等图片显示后再生成记录', 'error');
+                return;
+            }
             const container = document.getElementById('smartLogContainer');
             const items = container.querySelectorAll('[data-owner]');
             let groupedLogs = {};
             let hasContent = false;
+            const draftKeysToClear = [];
+            const beforeState = captureDataState();
 
             items.forEach(item => {
                 const owner = item.getAttribute('data-owner');
@@ -2124,7 +2656,7 @@
                         if (compVal) contentStr += ` 进度: ${compVal}。`;
                         if (richHtml && richHtml !== '<br>') contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${richHtml}</div>`;
                         groupedLogs[owner].push(contentStr);
-                        clearLocalDraft('custom_' + owner);
+                        draftKeysToClear.push('custom_' + owner);
                     }
                 } else {
                     const taskName = item.querySelector('.text-\\[13px\\] > span').textContent.trim();
@@ -2137,10 +2669,13 @@
                         groupedLogs[owner].push(contentStr);
                         
                         const taskId = item.getAttribute('data-taskid');
-                        clearLocalDraft(taskId);
+                        draftKeysToClear.push(taskId);
                         if (statusVal === '已完成') {
                             const t = tasks.find(x => x.id === taskId);
-                            if (t) t.completed = true;
+                            if (t) {
+                                t.completed = true;
+                                touchTask(t);
+                            }
                         }
                     }
                 }
@@ -2152,19 +2687,39 @@
 
             for (let owner in groupedLogs) {
                 const fullContent = groupedLogs[owner].join('\n\n');
-                dailyLogs.push({ id: Date.now().toString() + Math.random().toString(36).substr(2, 5), owner, date: currentLogDate, content: fullContent });
+                const now = Date.now();
+                dailyLogs.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), owner, date: currentLogDate, content: fullContent, _updatedAt: now });
             }
 
-            showToast('生成并记录成功！');
-            saveDataLocal();
+            const uniqueDraftKeys = [...new Set(draftKeysToClear)];
+            const draftBackup = new Map();
+            uniqueDraftKeys.forEach(key => {
+                draftBackup.set(key, getLocalDraft(key));
+                clearLocalDraft(key);
+            });
+
+            if (!saveDataLocal()) {
+                restoreDataState(beforeState);
+                draftBackup.forEach((content, key) => {
+                    if (content) saveLocalDraft(key, content);
+                });
+                showToast('保存失败：图片数据过大或浏览器存储空间不足，请减少图片后重试', 'error');
+                renderLogs();
+                renderApp();
+                return;
+            }
+
             scheduleCloudSync();
             renderLogs();
             renderSmartLogForm(); 
             renderApp();
+            showToast('生成并记录成功！');
         };
 
         window.confirmDeleteLog = function(id) {
             document.getElementById('delConfirmBtn').onclick = () => {
+                const beforeState = captureDataState();
+                const now = Date.now();
                 const log = dailyLogs.find(l => l.id === id);
                 if (log) {
                     const entries = log.content.split('\n\n');
@@ -2176,13 +2731,23 @@
                             const status = statusMatch[1];
                             if (status === '已完成') {
                                 const matchingTask = tasks.find(t => t.name === name && t.owner === log.owner);
-                                if (matchingTask) matchingTask.completed = false;
+                                if (matchingTask) {
+                                    matchingTask.completed = false;
+                                    touchTask(matchingTask, now);
+                                }
                             }
                         }
                     });
+                    markLogDeleted(log.id, now);
                 }
                 dailyLogs = dailyLogs.filter(l => l.id !== id);
-                saveDataLocal();
+                if (!saveDataLocal()) {
+                    restoreDataState(beforeState);
+                    showToast('保存失败：进度记录未删除', 'error');
+                    renderLogs();
+                    renderApp();
+                    return;
+                }
                 scheduleCloudSync();
                 renderLogs();
                 renderSmartLogForm();
@@ -2233,9 +2798,15 @@
         };
 
         window.saveLogEdit = function() {
+            if (pendingImagePasteCount > 0) {
+                showToast('图片正在处理中，请等图片显示后再保存', 'error');
+                return;
+            }
             const id = document.getElementById('editLogId').value;
             const log = dailyLogs.find(l => l.id === id);
             if(log) {
+                const beforeState = captureDataState();
+                const now = Date.now();
                 const items = document.querySelectorAll('.edit-log-item');
                 let newEntries = [];
                 items.forEach(item => {
@@ -2252,13 +2823,23 @@
                     
                     const matchingTask = tasks.find(t => t.name === name && t.owner === log.owner);
                     if(matchingTask) {
-                        if(status === '已完成') matchingTask.completed = true;
-                        else if(status === '推进中' || status === '未完成') matchingTask.completed = false;
+                        const nextCompleted = status === '已完成';
+                        if (matchingTask.completed !== nextCompleted) {
+                            matchingTask.completed = nextCompleted;
+                            touchTask(matchingTask, now);
+                        }
                     }
                 });
                 
                 log.content = newEntries.join('\n\n');
-                saveDataLocal();
+                touchLog(log, now);
+                if (!saveDataLocal()) {
+                    restoreDataState(beforeState);
+                    showToast('保存失败：历史进度修改未生效', 'error');
+                    renderLogs();
+                    renderApp();
+                    return;
+                }
                 scheduleCloudSync();
                 renderLogs();
                 renderApp();
@@ -2320,34 +2901,107 @@
             container.innerHTML = html;
         }
 
-        document.addEventListener('paste', function(e) {
-            if (!e.target.closest('.rich-input')) return;
-            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
-            for (let index in items) {
-                const item = items[index];
-                if (item.kind === 'file' && item.type.startsWith('image/')) {
-                    e.preventDefault(); 
-                    const blob = item.getAsFile();
-                    const reader = new FileReader();
-                    reader.onload = function(event) {
-                        const img = new Image();
-                        img.onload = function() {
+        let pendingImagePasteCount = 0;
+
+        function getDataUrlBytes(dataUrl) {
+            const base64 = (dataUrl.split(',')[1] || '');
+            return Math.ceil(base64.length * 3 / 4);
+        }
+
+        function compressPastedImage(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onerror = reject;
+                reader.onload = function(event) {
+                    const img = new Image();
+                    img.onerror = reject;
+                    img.onload = function() {
+                        const TARGET_BYTES = 120 * 1024;
+                        const MAX_SIZE = 900;
+                        let scale = Math.min(1, MAX_SIZE / Math.max(img.width, img.height));
+                        let width = Math.max(1, Math.round(img.width * scale));
+                        let height = Math.max(1, Math.round(img.height * scale));
+                        let dataUrl = '';
+
+                        const render = (quality) => {
                             const canvas = document.createElement('canvas');
-                            const ctx = canvas.getContext('2d');
-                            const MAX_SIZE = 800;
-                            let width = img.width;
-                            let height = img.height;
-                            if (width > height && width > MAX_SIZE) { height *= MAX_SIZE / width; width = MAX_SIZE; } 
-                            else if (height > MAX_SIZE) { width *= MAX_SIZE / height; height = MAX_SIZE; }
                             canvas.width = width;
                             canvas.height = height;
+                            const ctx = canvas.getContext('2d');
+                            ctx.fillStyle = '#ffffff';
+                            ctx.fillRect(0, 0, width, height);
                             ctx.drawImage(img, 0, 0, width, height);
-                            const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.6);
-                            document.execCommand('insertHTML', false, `<img src="${compressedDataUrl}" alt="截图">`);
+                            return canvas.toDataURL('image/jpeg', quality);
                         };
-                        img.src = event.target.result;
+
+                        let quality = 0.72;
+                        dataUrl = render(quality);
+                        while (getDataUrlBytes(dataUrl) > TARGET_BYTES && quality > 0.44) {
+                            quality -= 0.08;
+                            dataUrl = render(quality);
+                        }
+                        while (getDataUrlBytes(dataUrl) > TARGET_BYTES && Math.max(width, height) > 520) {
+                            width = Math.max(1, Math.round(width * 0.85));
+                            height = Math.max(1, Math.round(height * 0.85));
+                            quality = 0.58;
+                            dataUrl = render(quality);
+                        }
+                        resolve(dataUrl);
                     };
-                    reader.readAsDataURL(blob);
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        document.addEventListener('paste', async function(e) {
+            const target = e.target.closest('.rich-input');
+            if (!target) return;
+            const clipboard = e.clipboardData || e.originalEvent.clipboardData;
+            if (!clipboard || !clipboard.items) return;
+            const imageItems = Array.from(clipboard.items).filter(item => item.kind === 'file' && item.type.startsWith('image/'));
+            if (imageItems.length === 0) return;
+
+            e.preventDefault();
+            const selection = window.getSelection();
+            let insertRange = null;
+            if (selection && selection.rangeCount > 0) {
+                const range = selection.getRangeAt(0);
+                if (target.contains(range.commonAncestorContainer)) insertRange = range.cloneRange();
+            }
+
+            pendingImagePasteCount += imageItems.length;
+            for (const item of imageItems) {
+                try {
+                    const blob = item.getAsFile();
+                    if (!blob) continue;
+                    const compressedDataUrl = await compressPastedImage(blob);
+                    if (!document.body.contains(target)) throw new Error('Input removed');
+
+                    const imgNode = document.createElement('img');
+                    imgNode.src = compressedDataUrl;
+                    imgNode.alt = '截图';
+
+                    if (insertRange && target.contains(insertRange.commonAncestorContainer)) {
+                        insertRange.deleteContents();
+                        insertRange.insertNode(imgNode);
+                    } else {
+                        target.appendChild(imgNode);
+                    }
+
+                    insertRange = document.createRange();
+                    insertRange.setStartAfter(imgNode);
+                    insertRange.collapse(true);
+                    target.focus();
+                    const currentSelection = window.getSelection();
+                    currentSelection.removeAllRanges();
+                    currentSelection.addRange(insertRange);
+                    target.dispatchEvent(new Event('input', { bubbles: true }));
+                } catch (error) {
+                    console.error('Image paste failed:', error);
+                    showToast('图片处理失败，请重新粘贴一次', 'error');
+                } finally {
+                    pendingImagePasteCount = Math.max(0, pendingImagePasteCount - 1);
                 }
             }
         });
