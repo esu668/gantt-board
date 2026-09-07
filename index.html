@@ -1192,9 +1192,26 @@
             return { tasks, logs: dailyLogs, ownerOrder, syncMeta };
         }
 
+        function normalizeForComparison(value) {
+            if (Array.isArray(value)) {
+                return value.map(normalizeForComparison);
+            }
+            if (value && typeof value === 'object') {
+                const result = {};
+                Object.keys(value).sort().forEach(key => {
+                    result[key] = normalizeForComparison(value[key]);
+                });
+                return result;
+            }
+            return value;
+        }
+
         function recordsEqualAtSameTimestamp(a, b) {
-            try { return JSON.stringify(a) === JSON.stringify(b); }
-            catch (e) { return false; }
+            try {
+                return JSON.stringify(normalizeForComparison(a)) === JSON.stringify(normalizeForComparison(b));
+            } catch (e) {
+                return false;
+            }
         }
 
         function cloudCoversLocal(record) {
