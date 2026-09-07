@@ -511,6 +511,9 @@
         let todayBgColor = '#eef2ff';
         let searchQuery = '';
         let syncTimer = null;
+        let syncRetryTimer = null;
+        let syncRetryAttempt = 0;
+        const syncRetryDelays = [5000, 15000, 30000, 60000];
         let sortableInstance = null;
         let ganttShiftDays = 0;
         let shouldScrollToToday = true;
@@ -957,14 +960,39 @@
             return JSON.parse(JSON.stringify(value));
         }
 
-        let syncMeta = { revision: 0, ownerOrderUpdatedAt: 0, deletedTasks: {}, deletedLogs: {} };
+        let syncMeta = { revision: 0, ownerOrderUpdatedAt: 0, ownerOrderUpdateId: '', deletedTasks: {}, deletedLogs: {} };
         let syncInFlight = null;
+
+        function normalizeForComparison(value) {
+            if (Array.isArray(value)) return value.map(normalizeForComparison);
+            if (value && typeof value === 'object') {
+                const result = {};
+                Object.keys(value).sort().forEach(key => {
+                    result[key] = normalizeForComparison(value[key]);
+                });
+                return result;
+            }
+            return value;
+        }
+
+        function stableComparableString(value) {
+            try { return JSON.stringify(normalizeForComparison(value)); }
+            catch (e) { return ''; }
+        }
+
+        function createUpdateId() {
+            try {
+                if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+            } catch (e) {}
+            return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}-${Math.random().toString(36).slice(2)}`;
+        }
 
         function normalizeSyncMeta(meta) {
             const value = meta && typeof meta === 'object' ? meta : {};
             return {
                 revision: Number.isFinite(Number(value.revision)) ? Number(value.revision) : 0,
                 ownerOrderUpdatedAt: Number.isFinite(Number(value.ownerOrderUpdatedAt)) ? Number(value.ownerOrderUpdatedAt) : 0,
+                ownerOrderUpdateId: typeof value.ownerOrderUpdateId === 'string' ? value.ownerOrderUpdateId : '',
                 deletedTasks: value.deletedTasks && typeof value.deletedTasks === 'object' ? cloneJson(value.deletedTasks) : {},
                 deletedLogs: value.deletedLogs && typeof value.deletedLogs === 'object' ? cloneJson(value.deletedLogs) : {}
             };
@@ -975,29 +1003,64 @@
             return Number.isFinite(value) ? value : 0;
         }
 
+        function entityUpdateId(item) {
+            return item && typeof item._updateId === 'string' ? item._updateId : '';
+        }
+
+        function compareEntityVersions(a, b) {
+            const aTs = entityUpdatedAt(a);
+            const bTs = entityUpdatedAt(b);
+            if (aTs !== bTs) return aTs > bTs ? 1 : -1;
+            const aId = entityUpdateId(a);
+            const bId = entityUpdateId(b);
+            if (aId !== bId) return aId > bId ? 1 : -1;
+            const aStable = stableComparableString(a);
+            const bStable = stableComparableString(b);
+            if (aStable === bStable) return 0;
+            return aStable > bStable ? 1 : -1;
+        }
+
+        function compareOwnerOrderVersions(orderA, metaA, orderB, metaB) {
+            const aTs = Number(metaA && metaA.ownerOrderUpdatedAt) || 0;
+            const bTs = Number(metaB && metaB.ownerOrderUpdatedAt) || 0;
+            if (aTs !== bTs) return aTs > bTs ? 1 : -1;
+            const aId = metaA && typeof metaA.ownerOrderUpdateId === 'string' ? metaA.ownerOrderUpdateId : '';
+            const bId = metaB && typeof metaB.ownerOrderUpdateId === 'string' ? metaB.ownerOrderUpdateId : '';
+            if (aId !== bId) return aId > bId ? 1 : -1;
+            const aStable = stableComparableString(orderA || []);
+            const bStable = stableComparableString(orderB || []);
+            if (aStable === bStable) return 0;
+            return aStable > bStable ? 1 : -1;
+        }
+
         function normalizeEntityTimestamps() {
             tasks.forEach(t => {
                 if (!Number.isFinite(Number(t._updatedAt))) t._updatedAt = 0;
+                if (typeof t._updateId !== 'string') t._updateId = '';
             });
             dailyLogs.forEach(l => {
                 if (!Number.isFinite(Number(l._updatedAt))) l._updatedAt = 0;
+                if (typeof l._updateId !== 'string') l._updateId = '';
             });
         }
 
         function touchTask(task, ts = Date.now()) {
             if (!task) return;
             task._updatedAt = ts;
+            task._updateId = createUpdateId();
             if (syncMeta.deletedTasks[task.id] && ts > Number(syncMeta.deletedTasks[task.id])) delete syncMeta.deletedTasks[task.id];
         }
 
         function touchLog(log, ts = Date.now()) {
             if (!log) return;
             log._updatedAt = ts;
+            log._updateId = createUpdateId();
             if (syncMeta.deletedLogs[log.id] && ts > Number(syncMeta.deletedLogs[log.id])) delete syncMeta.deletedLogs[log.id];
         }
 
         function touchOwnerOrder(ts = Date.now()) {
             syncMeta.ownerOrderUpdatedAt = Math.max(Number(syncMeta.ownerOrderUpdatedAt) || 0, ts);
+            syncMeta.ownerOrderUpdateId = createUpdateId();
         }
 
         function markTaskDeleted(id, ts = Date.now()) {
@@ -1076,9 +1139,11 @@
             } else if(statusStr === 'pending') {
                 status.innerHTML = `<span class="w-2 h-2 rounded-full bg-yellow-400 shadow-[0_0_0_2px_rgba(250,204,21,0.2)]"></span> <span class="text-yellow-600">待同步</span>`;
             } else if(statusStr === 'conflict') {
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500"></span> <span class="text-amber-600">同步冲突，待重试</span>`;
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-amber-500 spinner"></span> <span class="text-amber-600">检测到并发修改，自动重试中...</span>`;
             } else if(statusStr === 'error') {
-                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> <span class="text-red-500">同步失败</span>`;
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-400"></span> <span class="text-red-500">云端同步失败，本地已保存</span>`;
+            } else if(statusStr === 'localerror') {
+                status.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500"></span> <span class="text-red-600">本地保存失败</span>`;
             }
         }
 
@@ -1107,7 +1172,7 @@
                     } catch (restoreError) {}
                 });
                 console.error('Local save failed:', error);
-                updateSyncUI('error');
+                updateSyncUI('localerror');
                 return false;
             }
         }
@@ -1155,7 +1220,7 @@
                 if (!item || item.id === undefined || item.id === null) return;
                 const id = String(item.id);
                 const existing = map.get(id);
-                if (!existing || entityUpdatedAt(item) >= entityUpdatedAt(existing)) map.set(id, cloneJson(item));
+                if (!existing || compareEntityVersions(item, existing) >= 0) map.set(id, cloneJson(item));
             });
             for (const [id, item] of map.entries()) {
                 const deletedAt = Number(tombstones[id]) || 0;
@@ -1177,9 +1242,10 @@
             tasks = mergeEntityCollections(tasks, Array.isArray(remote.tasks) ? remote.tasks : [], syncMeta.deletedTasks);
             dailyLogs = mergeEntityCollections(dailyLogs, Array.isArray(remote.logs) ? remote.logs : [], syncMeta.deletedLogs);
             const remoteOwnerOrder = Array.isArray(remote.ownerOrder) ? remote.ownerOrder : [];
-            if (remoteMeta.ownerOrderUpdatedAt > Number(syncMeta.ownerOrderUpdatedAt || 0)) {
+            if (compareOwnerOrderVersions(remoteOwnerOrder, remoteMeta, ownerOrder, syncMeta) > 0) {
                 ownerOrder = cloneJson(remoteOwnerOrder);
                 syncMeta.ownerOrderUpdatedAt = remoteMeta.ownerOrderUpdatedAt;
+                syncMeta.ownerOrderUpdateId = remoteMeta.ownerOrderUpdateId;
             } else if ((!ownerOrder || ownerOrder.length === 0) && remoteOwnerOrder.length) {
                 ownerOrder = cloneJson(remoteOwnerOrder);
             }
@@ -1204,20 +1270,6 @@
             return { tasks, logs: dailyLogs, ownerOrder, syncMeta };
         }
 
-        function normalizeForComparison(value) {
-            if (Array.isArray(value)) {
-                return value.map(normalizeForComparison);
-            }
-            if (value && typeof value === 'object') {
-                const result = {};
-                Object.keys(value).sort().forEach(key => {
-                    result[key] = normalizeForComparison(value[key]);
-                });
-                return result;
-            }
-            return value;
-        }
-
         function recordsEqualAtSameTimestamp(a, b) {
             try {
                 return JSON.stringify(normalizeForComparison(a)) === JSON.stringify(normalizeForComparison(b));
@@ -1234,18 +1286,16 @@
             for (const item of tasks) {
                 const remoteItem = remoteTasks.get(String(item.id));
                 if (!remoteItem) return false;
-                const localTs = entityUpdatedAt(item);
-                const remoteTs = entityUpdatedAt(remoteItem);
-                if (remoteTs < localTs) return false;
-                if (remoteTs === localTs && !recordsEqualAtSameTimestamp(remoteItem, item)) return false;
+                const versionCmp = compareEntityVersions(remoteItem, item);
+                if (versionCmp < 0) return false;
+                if (versionCmp === 0 && !recordsEqualAtSameTimestamp(remoteItem, item)) return false;
             }
             for (const item of dailyLogs) {
                 const remoteItem = remoteLogs.get(String(item.id));
                 if (!remoteItem) return false;
-                const localTs = entityUpdatedAt(item);
-                const remoteTs = entityUpdatedAt(remoteItem);
-                if (remoteTs < localTs) return false;
-                if (remoteTs === localTs && !recordsEqualAtSameTimestamp(remoteItem, item)) return false;
+                const versionCmp = compareEntityVersions(remoteItem, item);
+                if (versionCmp < 0) return false;
+                if (versionCmp === 0 && !recordsEqualAtSameTimestamp(remoteItem, item)) return false;
             }
             for (const [id, ts] of Object.entries(syncMeta.deletedTasks || {})) {
                 if ((Number(remoteMeta.deletedTasks[id]) || 0) < Number(ts || 0)) return false;
@@ -1253,7 +1303,7 @@
             for (const [id, ts] of Object.entries(syncMeta.deletedLogs || {})) {
                 if ((Number(remoteMeta.deletedLogs[id]) || 0) < Number(ts || 0)) return false;
             }
-            if ((Number(remoteMeta.ownerOrderUpdatedAt) || 0) < (Number(syncMeta.ownerOrderUpdatedAt) || 0)) return false;
+            if (compareOwnerOrderVersions(Array.isArray(remote.ownerOrder) ? remote.ownerOrder : [], remoteMeta, ownerOrder, syncMeta) < 0) return false;
             return true;
         }
 
@@ -1264,8 +1314,28 @@
             return result && result.record ? result.record : {};
         }
 
+        function clearSyncRetry(resetAttempt = true) {
+            if (syncRetryTimer) {
+                clearTimeout(syncRetryTimer);
+                syncRetryTimer = null;
+            }
+            if (resetAttempt) syncRetryAttempt = 0;
+        }
+
+        function scheduleSyncRetry() {
+            if (syncRetryTimer) return;
+            const index = Math.min(syncRetryAttempt, syncRetryDelays.length - 1);
+            const delay = syncRetryDelays[index];
+            syncRetryAttempt = Math.min(syncRetryAttempt + 1, syncRetryDelays.length - 1);
+            syncRetryTimer = setTimeout(() => {
+                syncRetryTimer = null;
+                forceCloudSync();
+            }, delay);
+        }
+
         async function scheduleCloudSync() {
             if(syncTimer) clearTimeout(syncTimer);
+            clearSyncRetry(true);
             syncTimer = setTimeout(() => { forceCloudSync(); }, 2000);
         }
 
@@ -1294,20 +1364,28 @@
                         if (cloudCoversLocal(remoteAfter)) {
                             mergeCloudRecord(remoteAfter);
                             if (!saveDataLocal(false)) throw new Error('LOCAL_SAVE_FAILED_AFTER_SYNC');
+                            clearSyncRetry(true);
                             updateSyncUI('synced');
                             return true;
                         }
 
+                        updateSyncUI('conflict');
                         mergeCloudRecord(remoteAfter);
                         if (!saveDataLocal(true)) throw new Error('LOCAL_SAVE_FAILED_DURING_RETRY');
                     }
-                    updateSyncUI('conflict');
                     try { localStorage.setItem('gantt_sync_pending', 'true'); } catch (e) {}
+                    updateSyncUI('conflict');
+                    scheduleSyncRetry();
                     return false;
                 } catch (error) {
                     console.error('Cloud sync failed:', error);
                     try { localStorage.setItem('gantt_sync_pending', 'true'); } catch (e) {}
-                    updateSyncUI('error');
+                    if (String(error && error.message || '').startsWith('LOCAL_SAVE_FAILED')) {
+                        updateSyncUI('localerror');
+                    } else {
+                        updateSyncUI('error');
+                        scheduleSyncRetry();
+                    }
                     return false;
                 } finally {
                     syncInFlight = null;
@@ -1344,11 +1422,12 @@
                         await forceCloudSync();
                     } else {
                         applyCloudRecordDirect(record);
-                        if(!saveDataLocal(false)) updateSyncUI('error');
+                        saveDataLocal(false);
                     }
                 } catch (error) {
                     loadLocalData();
                     updateSyncUI('error');
+                    scheduleSyncRetry();
                 }
             }
             
@@ -1394,7 +1473,7 @@
             }
             const beforeState = captureDataState();
             const now = Date.now();
-            tasks.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false, _updatedAt: now });
+            tasks.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false, _updatedAt: now, _updateId: createUpdateId() });
             if (!map[owner]) {
                 ownerOrder.push({name: owner, color});
                 touchOwnerOrder(now);
@@ -1436,7 +1515,7 @@
             }
             const beforeState = captureDataState();
             const now = Date.now();
-            tasks.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false, _updatedAt: now });
+            tasks.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), name: taskName, details: taskDetails, owner: owner, color: color, start: start, end: end, completed: false, _updatedAt: now, _updateId: createUpdateId() });
             if (!map[owner]) {
                 ownerOrder.push({name: owner, color});
                 touchOwnerOrder(now);
@@ -1703,7 +1782,7 @@
                     contentStr += `\n<div class="mt-1 ml-4 p-2 bg-gray-50 border border-gray-100 rounded-md text-xs text-gray-600 break-all">${richHtml}</div>`;
                 }
                 
-                dailyLogs.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), owner: task.owner, date: todayStr, content: contentStr, _updatedAt: now });
+                dailyLogs.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), owner: task.owner, date: todayStr, content: contentStr, _updatedAt: now, _updateId: createUpdateId() });
                 
                 if (!saveDataLocal()) {
                     restoreDataState(beforeState);
@@ -2771,7 +2850,7 @@
             for (let owner in groupedLogs) {
                 const fullContent = groupedLogs[owner].join('\n\n');
                 const now = Date.now();
-                dailyLogs.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), owner, date: currentLogDate, content: fullContent, _updatedAt: now });
+                dailyLogs.push({ id: now.toString() + Math.random().toString(36).substr(2, 5), owner, date: currentLogDate, content: fullContent, _updatedAt: now, _updateId: createUpdateId() });
             }
 
             const uniqueDraftKeys = [...new Set(draftKeysToClear)];
