@@ -457,12 +457,12 @@
                 <div class="bg-amber-50/60 p-4 rounded-xl border border-amber-200 flex flex-col gap-2.5">
                     <div class="flex items-center justify-between gap-3">
                         <div>
-                            <div class="text-sm font-semibold text-gray-700">Supabase 迁移备份</div>
-                            <div class="text-[10px] text-gray-400 mt-0.5">迁移前导出当前浏览器中的完整看板数据</div>
+                            <div class="text-sm font-semibold text-gray-700">数据备份与迁移</div>
+                            <div class="text-[10px] text-gray-400 mt-0.5">导出完整看板数据，可用于本地备份、恢复或迁移到其他云端平台</div>
                         </div>
-                        <button type="button" onclick="exportMigrationBackup()" class="shrink-0 px-3 py-2 bg-white text-amber-700 border border-amber-200 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors shadow-sm">导出当前数据</button>
+                        <button type="button" onclick="exportPortableBackup()" class="shrink-0 px-3 py-2 bg-white text-amber-700 border border-amber-200 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors shadow-sm">导出当前数据</button>
                     </div>
-                    <div class="text-[10px] leading-relaxed text-amber-700/80">导出后会把当前数据标记为待同步。更换为 Supabase 后，请在这台电脑上刷新一次页面，它会优先使用本地数据并上传到新的云端。</div>
+                    <div class="text-[10px] leading-relaxed text-amber-700/80">备份包含任务、每日进度、负责人、同步元数据及界面设置；不包含 Supabase、Vercel、API Key 等平台配置或密钥。</div>
                 </div>
             </div>
             <div class="flex justify-end gap-3 mt-5">
@@ -755,30 +755,42 @@
             showToast('全局设置已保存');
         };
 
-        window.exportMigrationBackup = function() {
+        window.exportPortableBackup = function() {
             try {
-                const payload = buildSyncPayload();
+                const now = new Date();
+                const payload = {
+                    format: 'gantt-board-portable-backup',
+                    schemaVersion: 1,
+                    app: 'gantt-board',
+                    exportedAt: now.toISOString(),
+                    data: buildSyncPayload(),
+                    settings: {
+                        todayBgColor,
+                        logBgColor,
+                        defaultLogExpand,
+                        autoShowSummary
+                    }
+                };
                 const json = JSON.stringify(payload, null, 2);
                 const blob = new Blob([json], { type: 'application/json;charset=utf-8' });
                 const url = URL.createObjectURL(blob);
-                const now = new Date();
                 const pad = n => String(n).padStart(2, '0');
                 const stamp = `${now.getFullYear()}${pad(now.getMonth() + 1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`;
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `gantt-migration-backup-${stamp}.json`;
+                link.download = `gantt-board-backup-${stamp}.json`;
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
                 setTimeout(() => URL.revokeObjectURL(url), 1000);
-                localStorage.setItem('gantt_sync_pending', 'true');
-                updateSyncUI('pending');
-                showToast('迁移备份已导出，当前数据已标记为待同步');
+                showToast('完整备份已导出');
             } catch (error) {
-                console.error('Migration backup export failed:', error);
+                console.error('Portable backup export failed:', error);
                 showToast('导出失败，请重试', 'error');
             }
         };
+
+        window.exportMigrationBackup = window.exportPortableBackup;
 
         window.filterByOwner = function(owner) {
             currentOwnerFilter = owner;
