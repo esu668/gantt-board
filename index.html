@@ -4805,12 +4805,12 @@
                                 const ownerFont = hasCjkOwner
                                     ? '600 11px "Microsoft YaHei UI", "Microsoft YaHei", sans-serif'
                                     : '700 10px Inter, sans-serif';
-                                const ownerW = measureBarText(task.owner || '', ownerFont) + (hasCjkOwner ? 24 : 22);
+                                const ownerW = measureBarText(task.owner || '', ownerFont) + (hasCjkOwner ? 18 : 14);
                                 const barPx = renderedVisibleDuration * 110;
                                 const spare = barPx - 10 - nameW - 14;
-                                const badgeMode = spare >= ownerW + 10 ? 'full' : (!hasCjkOwner && spare >= 26 ? 'initial' : 'none');
+                                const badgeMode = spare >= ownerW + 10 ? 'full' : (spare >= 24 ? 'initial' : 'none');
                                 bar.style.paddingLeft = '10px';
-                                bar.style.paddingRight = badgeMode === 'full' ? (ownerW + 16) + 'px' : (badgeMode === 'initial' ? '28px' : '8px');
+                                bar.style.paddingRight = badgeMode === 'full' ? (ownerW + 16) + 'px' : (badgeMode === 'initial' ? '30px' : '8px');
                                 
                                 bar.onclick = (e) => {
                                     if (e.target.closest('.resize-handle')) return;
@@ -4832,24 +4832,22 @@
                                 
                                 let ownerHtml = '';
                                 if (badgeMode === 'full') {
-                                    const ownerBadgeFont = hasCjkOwner ? '11px' : '10px';
-                                    ownerHtml = `<div class="absolute right-1.5 top-1/2 -translate-y-1/2 font-semibold truncate pointer-events-none" style="
-                                        max-width: ${hasCjkOwner ? '64px' : '58px'};
-                                        min-width: ${hasCjkOwner ? '34px' : '32px'};
-                                        padding: 3px 8px;
-                                        border-radius: 9999px;
-                                        font-size: ${ownerBadgeFont};
-                                        line-height: 1;
-                                        text-align: center;
-                                        background: rgba(255,255,255,0.42);
-                                        border: 1px solid rgba(255,255,255,0.58);
-                                        box-shadow: 0 1px 2px rgba(15,23,42,0.08);
-                                        color: ${textColor};
-                                    ">${task.owner}</div>`;
-                                    rightElementsWidth += hasCjkOwner ? 58 : 52;
+                                    const ownerBadgeClass = hasCjkOwner
+                                        ? 'text-[11px] font-semibold px-2 py-[2px] rounded-md max-w-[60px]'
+                                        : 'text-[10px] font-bold px-1.5 py-0.5 rounded-sm max-w-[50px]';
+                                    const ownerBadgeBg = hasCjkOwner ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.12)';
+                                    ownerHtml = `<div class="absolute right-1.5 top-1/2 -translate-y-1/2 ${ownerBadgeClass} leading-none truncate pointer-events-none" style="background-color: ${ownerBadgeBg}; color: ${textColor}">${task.owner}</div>`;
+                                    rightElementsWidth += hasCjkOwner ? 52 : 45;
                                 } else if (badgeMode === 'initial') {
                                     const initial = (task.owner || '').trim().charAt(0).toUpperCase();
-                                    if (initial) ownerHtml = `<div class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold w-[20px] h-[20px] flex items-center justify-center rounded-full pointer-events-none" style="background: rgba(255,255,255,0.42); border: 1px solid rgba(255,255,255,0.58); box-shadow: 0 1px 2px rgba(15,23,42,0.08); color: ${textColor}">${initial}</div>`;
+                                    if (initial) {
+                                        const initialClass = hasCjkOwner
+                                            ? 'text-[11px] font-semibold px-[6px] py-[2px] rounded-md'
+                                            : 'text-[10px] font-bold px-[6px] py-[2px] rounded-sm';
+                                        const initialBg = hasCjkOwner ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.12)';
+                                        ownerHtml = `<div class="absolute right-1.5 top-1/2 -translate-y-1/2 ${initialClass} leading-none pointer-events-none" style="background-color: ${initialBg}; color: ${textColor}">${initial}</div>`;
+                                        rightElementsWidth += 28;
+                                    }
                                 }
 
                                 bar.innerHTML = `
