@@ -52,6 +52,33 @@ async function readWorkspace(baseUrl, secretKey) {
         : {};
 }
 
+async function readHeartbeat(baseUrl, secretKey) {
+    const endpoint =
+        `${baseUrl}/rest/v1/${TABLE_NAME}` +
+        `?id=eq.${encodeURIComponent(WORKSPACE_ID)}` +
+        `&select=id,updated_at&limit=1`;
+
+    let lastRows = [];
+    for (let i = 0; i < 3; i++) {
+        const response = await fetch(endpoint, {
+            method: 'GET',
+            headers: getHeaders(secretKey),
+            cache: 'no-store'
+        });
+
+        if (!response.ok) {
+            const detail = await response.text().catch(() => '');
+            throw new Error(
+                `Supabase keepalive failed: ${response.status} ${detail.slice(0, 300)}`
+            );
+        }
+
+        lastRows = await response.json();
+    }
+
+    return lastRows;
+}
+
 async function writeWorkspace(baseUrl, secretKey, data) {
     const endpoint =
         `${baseUrl}/rest/v1/${TABLE_NAME}?on_conflict=id`;
@@ -87,6 +114,14 @@ export default async function handler(req, res) {
         const { baseUrl, secretKey } = getConfig();
 
         if (req.method === 'GET') {
+            const userAgent = String(req.headers['user-agent'] || '');
+            const isVercelCron = userAgent.includes('vercel-cron/1.0');
+
+            if (isVercelCron) {
+                await readHeartbeat(baseUrl, secretKey);
+                return res.status(200).json({ ok: true, keepalive: true });
+            }
+
             const record = await readWorkspace(baseUrl, secretKey);
 
             return res.status(200).json({
