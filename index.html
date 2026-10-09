@@ -10,7 +10,7 @@
 @layer theme, base, components, utilities;
 @layer theme {
   :root, :host {
-    --font-sans: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+    --font-sans: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
       "Courier New", monospace;
     --color-red-50: oklch(97.1% 0.013 17.38);
@@ -1349,8 +1349,8 @@
     line-height: var(--leading-snug);
   }
   .font-bold {
-    --tw-font-weight: 600;
-    font-weight: 600;
+    --tw-font-weight: var(--font-weight-bold);
+    font-weight: var(--font-weight-bold);
   }
   .font-medium {
     --tw-font-weight: var(--font-weight-medium);
@@ -1361,8 +1361,8 @@
     font-weight: var(--font-weight-normal);
   }
   .font-semibold {
-    --tw-font-weight: 500;
-    font-weight: 500;
+    --tw-font-weight: var(--font-weight-semibold);
+    font-weight: var(--font-weight-semibold);
   }
   .tracking-tight {
     --tw-tracking: var(--tracking-tight);
@@ -2410,7 +2410,7 @@
 
     </style>
     <style>
-        body { font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background-color: #f8fafc; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; font-kerning: normal; }
+        body { font-family: "Segoe UI Variable Text", "Segoe UI Variable", "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif; background-color: #f8fafc; text-rendering: optimizeLegibility; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
         ::-webkit-scrollbar { width: 8px; height: 8px; }
         ::-webkit-scrollbar-track { background: transparent; }
         ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
@@ -2448,77 +2448,6 @@
         .deadline-col { min-width: 300px; }
         .color-picker-wrap input[type="color"] { border: 0; padding: 0; width: 200%; height: 200%; cursor: pointer; transform: translate(-25%, -25%); }
         .writing-vertical { writing-mode: vertical-rl; }
-        /* Unified typography system: balanced CJK/Latin weights across all views */
-        body {
-            font-family: "Segoe UI", "Microsoft YaHei UI", "Microsoft YaHei", "PingFang SC", Arial, sans-serif;
-            font-kerning: normal;
-            text-rendering: optimizeLegibility;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
-        }
-        button, input, select, textarea, [contenteditable="true"] { font-family: inherit; }
-        .font-bold { font-weight: 600 !important; }
-        .font-semibold { font-weight: 500 !important; }
-
-        /* Main navigation / section titles */
-        h1.font-bold, h2.font-bold, h3.font-bold {
-            font-weight: 600 !important;
-            letter-spacing: -0.012em;
-        }
-
-        /* Forms and settings: labels should stay readable without looking heavy */
-        form label.font-bold, #settingsModal label.font-bold, #settingsModal span.font-bold {
-            font-weight: 500 !important;
-            letter-spacing: -0.006em;
-        }
-
-        /* Gantt: task names, dates and owner badges */
-        #ganttContainer .gantt-bar {
-            font-weight: 500 !important;
-            letter-spacing: -0.012em;
-        }
-        #ganttContainer .sticky-task-content {
-            font-weight: 500 !important;
-            letter-spacing: -0.012em;
-        }
-        #ganttContainer .gantt-header .font-semibold,
-        #ganttContainer .gantt-header .font-bold {
-            font-weight: 500 !important;
-            letter-spacing: -0.008em;
-        }
-        #ganttContainer .gantt-bar .font-bold,
-        #ganttContainer .gantt-bar .font-semibold {
-            font-weight: 500 !important;
-        }
-
-        /* Task pool / deadline / completed drawer */
-        #taskPoolContainer .font-bold,
-        #taskPoolContainer .font-semibold,
-        #deadlineContainer .font-bold,
-        #deadlineContainer .font-semibold,
-        #completedDrawerList .font-bold,
-        #completedDrawerList .font-semibold {
-            font-weight: 500 !important;
-            letter-spacing: -0.008em;
-        }
-
-        /* Daily progress and history: badges stay distinct without becoming blocks */
-        #smartLogContainer .font-bold,
-        #smartLogContainer .font-semibold,
-        #logListContainer .font-bold,
-        #logListContainer .font-semibold,
-        #editLogModal .font-bold,
-        #editLogModal .font-semibold {
-            font-weight: 500 !important;
-        }
-
-        /* Small chips / counters / owner labels */
-        .text-\[10px\].font-medium,
-        .text-\[11px\].font-medium,
-        .text-xs.font-semibold {
-            font-weight: 500 !important;
-        }
-
         #cdpPop { position: fixed; z-index: 300; width: 264px; background: #ffffff; border: 1px solid #e5e7eb; border-radius: 16px; box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.18), 0 4px 12px rgba(15, 23, 42, 0.08); padding: 12px; opacity: 0; transform: translateY(6px) scale(0.98); transition: opacity 0.16s ease, transform 0.16s ease; pointer-events: none; }
         #cdpPop.cdp-open { opacity: 1; transform: translateY(0) scale(1); pointer-events: auto; }
         .cdp-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
@@ -2555,10 +2484,10 @@
         </div>
         <div class="flex flex-wrap items-center gap-1.5 w-full md:w-auto pb-1 md:pb-0">
             <div class="flex items-center bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0">
-                <button id="btnViewLog" onclick="switchView('log')" class="px-3 py-1.5 text-[13px] font-semibold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">每日进度</button>
-                <button id="viewGanttBtn" onclick="switchView('gantt')" class="px-3 py-1.5 text-[13px] font-semibold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">排期看板</button>
-                <button id="viewDeadlineBtn" onclick="switchView('deadline')" class="px-3 py-1.5 text-[13px] font-semibold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">节点看板</button>
-                <button id="viewPoolBtn" onclick="switchView('pool')" class="px-3 py-1.5 text-[13px] font-semibold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">任务池</button>
+                <button id="btnViewLog" onclick="switchView('log')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">每日进度</button>
+                <button id="viewGanttBtn" onclick="switchView('gantt')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">排期看板</button>
+                <button id="viewDeadlineBtn" onclick="switchView('deadline')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">节点看板</button>
+                <button id="viewPoolBtn" onclick="switchView('pool')" class="px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative">任务池</button>
             </div>
             <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-lg border border-gray-200 shrink-0 ml-1 md:ml-3" id="filterButtonGroup"></div>
             <button onclick="generateTwoDaySummaryImage()" class="shrink-0 flex items-center gap-1.5 bg-emerald-50 text-emerald-600 hover:bg-emerald-100 border border-emerald-200 px-3 py-1.5 rounded-lg text-xs font-semibold transition-colors shadow-sm ml-1">
@@ -2579,8 +2508,8 @@
     </div>
 
     <button id="completedToggleBtn" onclick="toggleCompletedDrawer()" class="fixed left-0 top-1/2 -translate-y-1/2 z-[45] bg-white border border-l-0 border-gray-200 shadow-[2px_0_10px_rgba(0,0,0,0.05)] rounded-r-xl py-3 px-1.5 flex flex-col items-center gap-1.5 hover:bg-gray-50 transition-transform">
-        <span class="writing-vertical text-[11px] font-medium text-gray-500 tracking-widest leading-none">已完成收纳</span>
-        <span id="completedBadgeFloat" class="bg-gray-100 text-gray-600 text-[10px] font-medium px-1.5 py-0.5 rounded shadow-sm">0</span>
+        <span class="writing-vertical text-[11px] font-bold text-gray-500 tracking-widest leading-none">已完成收纳</span>
+        <span id="completedBadgeFloat" class="bg-gray-100 text-gray-600 text-[10px] font-bold px-1.5 py-0.5 rounded shadow-sm">0</span>
     </button>
     <div id="completedDrawerOverlay" onclick="toggleCompletedDrawer()" class="fixed inset-0 bg-slate-800/40 z-[55] hidden opacity-0 transition-opacity duration-300"></div>
     <div id="completedDrawer" class="fixed left-0 top-0 bottom-0 w-[400px] max-w-[90vw] bg-[#f8fafc] shadow-2xl z-[60] transform -translate-x-full transition-transform duration-300 border-r border-gray-200 flex flex-col">
@@ -2604,11 +2533,11 @@
                 <div class="flex items-center gap-3">
                     <div id="dateRangeDisplay" class="text-[13px] font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-100 hidden md:flex items-center">等待添加...</div>
                     <div id="ganttNavControls" class="flex items-center bg-white border border-gray-200 rounded-lg p-1 shadow-sm">
-                        <button type="button" onclick="shiftGantt(-15)" class="px-2.5 py-1 text-xs font-semibold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">&lt; 往前15天</button>
+                        <button type="button" onclick="shiftGantt(-15)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">&lt; 往前15天</button>
                         <div class="w-px h-3 bg-gray-300 mx-1"></div>
-                        <button type="button" onclick="resetGantt()" class="px-3 py-1 text-xs font-semibold text-indigo-600 hover:bg-indigo-50 rounded transition-colors">回到今天</button>
+                        <button type="button" onclick="resetGantt()" class="px-3 py-1 text-xs font-bold text-indigo-600 hover:bg-indigo-50 rounded transition-colors">回到今天</button>
                         <div class="w-px h-3 bg-gray-300 mx-1"></div>
-                        <button type="button" onclick="shiftGantt(15)" class="px-2.5 py-1 text-xs font-semibold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">往后15天 &gt;</button>
+                        <button type="button" onclick="shiftGantt(15)" class="px-2.5 py-1 text-xs font-bold text-gray-500 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors">往后15天 &gt;</button>
                     </div>
                 </div>
             </div>
@@ -2622,8 +2551,8 @@
     </div>
     <div id="taskSection" class="flex-1 flex flex-col md:flex-row gap-4 p-2 md:p-4 pb-2 min-h-0 transition-all duration-300 hidden">
         <div class="w-full md:hidden flex items-stretch shadow-sm rounded-md shrink-0 mb-1" id="mobTaskNav">
-            <button onclick="switchMobileTask('form')" id="mobBtnTaskForm" class="flex-1 py-2 text-xs font-semibold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">添加排期</button>
-            <button onclick="switchMobileTask('pool')" id="mobBtnTaskPool" class="flex-1 py-2 text-xs font-semibold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">任务池</button>
+            <button onclick="switchMobileTask('form')" id="mobBtnTaskForm" class="flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">添加排期</button>
+            <button onclick="switchMobileTask('pool')" id="mobBtnTaskPool" class="flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">任务池</button>
         </div>
         <div id="mobTaskFormPanel" class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
@@ -2632,16 +2561,16 @@
             <div class="p-5 overflow-y-auto">
                 <form id="taskForm" class="flex flex-col gap-3.5">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">任务名称</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务名称</label>
                         <input type="text" id="taskName" required placeholder="例如：设计首页 Banner..." class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white placeholder-gray-400">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">任务细节/备注 (选填)</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">任务细节/备注 (选填)</label>
                         <div id="taskDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all text-gray-700" contenteditable="true" data-placeholder="填写具体的细项..."></div>
                     </div>
                     <div class="grid grid-cols-[1fr_auto] gap-3 relative z-40">
                         <div class="custom-combobox relative">
-                            <label class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">负责人</label>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">负责人</label>
                             <div class="relative flex items-center">
                                 <input type="text" id="owner" required placeholder="选择或输入..." autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
                                 <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
@@ -2652,7 +2581,7 @@
                             <ul id="ownerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-50 py-1 opacity-0 scale-y-95"></ul>
                         </div>
                         <div class="flex flex-col">
-                            <label class="block text-xs font-semibold text-gray-500 mb-1.5">颜色配置</label>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5">颜色配置</label>
                             <div class="flex items-center gap-1.5 flex-1">
                                 <input type="text" id="taskColorHex" value="#fde047" class="w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase bg-gray-50 text-center" oninput="syncColorInput(this, 'taskColorPicker', 'taskColorBox')">
                                 <div id="taskColorBox" class="relative w-8 h-8 rounded-lg shadow-sm border border-gray-200 shrink-0 color-picker-wrap overflow-hidden" style="background-color: #fde047;">
@@ -2663,11 +2592,11 @@
                     </div>
                     <div class="grid grid-cols-2 gap-3 mt-1 relative z-30">
                         <div>
-                            <label class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">开始</label>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">开始</label>
                             <input type="date" id="startDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
                         </div>
                         <div>
-                            <label class="block text-xs font-semibold text-gray-500 mb-1.5 tracking-wide">结束</label>
+                            <label class="block text-xs font-bold text-gray-500 mb-1.5 tracking-wide">结束</label>
                             <input type="date" id="endDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
                         </div>
                     </div>
@@ -2688,8 +2617,8 @@
     </div>
     <div id="logPageSection" class="flex-1 flex flex-col md:flex-row gap-4 p-2 md:p-4 pb-2 min-h-0 transition-all duration-300 hidden bg-[#f8fafc]">
         <div class="w-full md:hidden flex items-stretch shadow-sm rounded-md shrink-0 mb-1" id="mobLogNav">
-            <button onclick="switchMobileLog('form')" id="mobBtnForm" class="flex-1 py-2 text-xs font-semibold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">进度汇报</button>
-            <button onclick="switchMobileLog('history')" id="mobBtnHistory" class="flex-1 py-2 text-xs font-semibold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">历史流</button>
+            <button onclick="switchMobileLog('form')" id="mobBtnForm" class="flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors">进度汇报</button>
+            <button onclick="switchMobileLog('history')" id="mobBtnHistory" class="flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors">历史流</button>
         </div>
         <div id="mobLogFormPanel" class="w-full md:w-[420px] bg-white rounded-2xl shadow-sm border border-gray-200 flex flex-col overflow-hidden shrink-0 flex-1 md:flex-none">
             <div class="px-5 py-3 border-b border-gray-100 bg-gray-50/50 flex justify-between items-center shrink-0">
@@ -2736,8 +2665,8 @@
             <div class="px-5 py-4 border-b border-gray-100 flex items-start justify-between gap-3 shrink-0">
                 <div class="min-w-0">
                     <div class="flex items-center gap-2 mb-1.5">
-                        <span class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">已完成</span>
-                        <span id="completedDetailOwner" class="text-[10px] font-medium px-2 py-0.5 rounded-full bg-gray-100 text-gray-500"></span>
+                        <span class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-100">已完成</span>
+                        <span id="completedDetailOwner" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-gray-100 text-gray-500"></span>
                     </div>
                     <h3 id="completedDetailTitle" class="font-bold text-gray-800 text-lg leading-snug break-words"></h3>
                     <div id="completedDetailSchedule" class="text-[11px] text-gray-400 mt-1"></div>
@@ -2746,12 +2675,12 @@
             </div>
             <div class="p-5 overflow-y-auto flex flex-col gap-4">
                 <div class="bg-gray-50 border border-gray-200 rounded-xl p-3.5">
-                    <div class="text-[11px] font-medium text-gray-500 mb-2">原任务细节</div>
+                    <div class="text-[11px] font-bold text-gray-500 uppercase tracking-wider mb-2">原任务细节</div>
                     <div id="completedDetailTaskDetails" class="task-details-rich text-sm text-gray-700 leading-relaxed break-words"></div>
                 </div>
                 <div class="bg-emerald-50/50 border border-emerald-100 rounded-xl p-3.5">
                     <div class="flex items-center justify-between gap-3 mb-2">
-                        <div class="text-[11px] font-medium text-emerald-700">完成记录</div>
+                        <div class="text-[11px] font-bold text-emerald-700 uppercase tracking-wider">完成记录</div>
                         <div id="completedDetailDate" class="text-[11px] font-medium text-emerald-600"></div>
                     </div>
                     <div id="completedDetailProgress" class="hidden text-xs font-semibold text-gray-600 mb-2 bg-white/80 border border-emerald-100 rounded-lg px-2.5 py-2"></div>
@@ -2770,16 +2699,16 @@
             <h3 class="font-bold text-gray-800 mb-4 text-lg border-b border-gray-100 pb-2">添加排期</h3>
             <form id="quickAddForm" class="flex flex-col gap-3.5">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1.5">任务名称</label>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">任务名称</label>
                     <input type="text" id="qaName" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1.5">任务细节 (选填)</label>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">任务细节 (选填)</label>
                     <div id="qaDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all" contenteditable="true"></div>
                 </div>
                 <div class="grid grid-cols-[1fr_auto] gap-3 relative z-[60]">
                     <div class="custom-combobox relative">
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">负责人</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5">负责人</label>
                         <div class="relative flex items-center">
                             <input type="text" id="qaOwner" required autocomplete="off" class="w-full pl-3 pr-10 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white">
                             <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center justify-center w-6 h-6">
@@ -2790,7 +2719,7 @@
                         <ul id="qaOwnerDropdownList" class="dropdown-menu absolute left-0 right-0 top-[calc(100%+4px)] bg-white border border-gray-200 rounded-xl shadow-lg max-h-40 overflow-y-auto hidden z-[70] py-1 opacity-0 scale-y-95"></ul>
                     </div>
                     <div class="flex flex-col">
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">颜色</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5">颜色</label>
                         <div class="flex items-center gap-1.5 flex-1">
                             <input type="text" id="qaColorHex" value="#fde047" class="w-[70px] px-2 py-1.5 border border-gray-300 rounded-lg text-xs uppercase bg-gray-50 text-center" oninput="syncColorInput(this, 'qaColorPicker', 'qaColorBox')">
                             <div id="qaColorBox" class="relative w-8 h-8 rounded-lg shadow-sm border border-gray-200 shrink-0 color-picker-wrap overflow-hidden" style="background-color: #fde047;">
@@ -2801,11 +2730,11 @@
                 </div>
                 <div class="grid grid-cols-2 gap-3 mt-1 relative z-30">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">开始</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5">开始</label>
                         <input type="date" id="qaStartDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">结束</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5">结束</label>
                         <input type="date" id="qaEndDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-500/50 text-sm bg-gray-50 focus:bg-white text-gray-700">
                     </div>
                 </div>
@@ -2823,30 +2752,30 @@
             <form id="editForm" class="flex flex-col gap-4">
                 <input type="hidden" id="editTaskId">
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1.5">任务名称</label>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">任务名称</label>
                     <input type="text" id="editTaskName" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1.5">任务细节 (选填)</label>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">任务细节 (选填)</label>
                     <div id="editTaskDetails" class="rich-input w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50 min-h-[60px] max-h-[150px] overflow-y-auto outline-none break-all" contenteditable="true"></div>
                 </div>
                 <div>
-                    <label class="block text-xs font-semibold text-gray-500 mb-1.5">负责人</label>
+                    <label class="block text-xs font-bold text-gray-500 mb-1.5">负责人</label>
                     <input type="text" id="editOwner" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                 </div>
                 <div class="grid grid-cols-2 gap-3 mt-1">
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">开始</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5">开始</label>
                         <input type="date" id="editStartDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                     </div>
                     <div>
-                        <label class="block text-xs font-semibold text-gray-500 mb-1.5">结束</label>
+                        <label class="block text-xs font-bold text-gray-500 mb-1.5">结束</label>
                         <input type="date" id="editEndDate" required class="w-full px-3 py-2 border border-gray-300 rounded-xl text-sm focus:ring-2 focus:ring-indigo-500/50">
                     </div>
                 </div>
                 <div class="flex items-center gap-2 mt-1 px-1">
                     <input type="checkbox" id="editCompleted" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
-                    <label for="editCompleted" class="text-xs font-semibold text-gray-600 cursor-pointer">将此任务标记为已完成</label>
+                    <label for="editCompleted" class="text-xs font-bold text-gray-600 cursor-pointer">将此任务标记为已完成</label>
                 </div>
                 <div class="flex items-center justify-between gap-3 mt-2">
                     <button type="button" onclick="deleteEditingTask()" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-medium rounded-xl hover:bg-red-100 text-sm">删除任务</button>
@@ -2888,7 +2817,7 @@
             </h3>
             <div class="flex flex-col gap-4">
                 <div class="bg-gray-50 p-4 rounded-xl border border-gray-200 flex flex-col">
-                    <label class="block text-xs font-semibold text-gray-600 mb-1">人员与颜色配置 (拖拽排序)</label>
+                    <label class="block text-xs font-bold text-gray-600 mb-1 uppercase tracking-wider">人员与颜色配置 (拖拽排序)</label>
                     <p class="text-[10px] text-gray-400 mb-3">此顺序决定了任务池与汇报页面的展现优先级</p>
                     <div id="settingsOwnerList" class="flex flex-col gap-2 w-full"></div>
                     <button type="button" onclick="addOwnerRow('', '#94a3b8')" class="text-xs text-indigo-600 mt-3 font-bold flex items-center gap-1 hover:text-indigo-800 transition-colors self-start">
@@ -2916,14 +2845,14 @@
                         </div>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center w-full">
-                        <span class="text-xs font-semibold text-gray-600">每日进度默认展开</span>
+                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">每日进度默认展开</span>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" id="setLogExpand" class="sr-only peer">
                             <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
                         </label>
                     </div>
                     <div class="mt-4 pt-4 border-t border-gray-200 flex justify-between items-center w-full">
-                        <span class="text-xs font-semibold text-gray-600">启动时弹出2日聚焦</span>
+                        <span class="text-xs font-bold text-gray-600 uppercase tracking-wider">启动时弹出2日聚焦</span>
                         <label class="relative inline-flex items-center cursor-pointer shrink-0">
                             <input type="checkbox" id="setAutoSummary" class="sr-only peer">
                             <div class="w-9 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-indigo-600"></div>
@@ -2936,7 +2865,7 @@
                             <div class="text-sm font-semibold text-gray-700">数据备份与迁移</div>
                             <div class="text-[10px] text-gray-400 mt-0.5">导出完整看板数据，可用于本地备份、恢复或迁移到其他云端平台</div>
                         </div>
-                        <button type="button" onclick="exportPortableBackup()" class="shrink-0 px-3 py-2 bg-white text-amber-700 border border-amber-200 rounded-lg text-xs font-semibold hover:bg-amber-100 transition-colors shadow-sm">导出当前数据</button>
+                        <button type="button" onclick="exportPortableBackup()" class="shrink-0 px-3 py-2 bg-white text-amber-700 border border-amber-200 rounded-lg text-xs font-bold hover:bg-amber-100 transition-colors shadow-sm">导出当前数据</button>
                     </div>
                     <div class="text-[10px] leading-relaxed text-amber-700/80">备份包含任务、每日进度、负责人、同步元数据及界面设置；不包含 Supabase、Vercel、API Key 等平台配置或密钥。</div>
                 </div>
@@ -3276,12 +3205,12 @@
 
         function renderFilterButtons() {
             const container = document.getElementById('filterButtonGroup');
-            container.innerHTML = `<button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white shadow-sm text-gray-800 transition-all focus:outline-none">全员视角</button>`;
+            container.innerHTML = `<button onclick="filterByOwner('all')" id="btnFilterAll" class="px-3 py-1.5 text-xs font-bold rounded-md bg-white shadow-sm text-gray-800 transition-all focus:outline-none">全员视角</button>`;
             ownerOrder.forEach(owner => {
                 const btn = document.createElement('button');
                 btn.onclick = () => filterByOwner(owner.name);
                 btn.id = 'btnFilter' + owner.name.replace(/\s+/g, '');
-                btn.className = 'px-3 py-1.5 text-xs font-semibold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none';
+                btn.className = 'px-3 py-1.5 text-xs font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all focus:outline-none';
                 btn.textContent = owner.name;
                 container.appendChild(btn);
             });
@@ -4552,8 +4481,8 @@
                 item.innerHTML = `
                     <div class="flex items-center gap-2.5 min-w-0">
                         <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-600 cursor-pointer accent-indigo-600 shrink-0" onchange="toggleComplete('${task.id}')">
-                        <div class="text-[13px] font-semibold text-gray-600 line-through truncate flex-1 leading-snug">${highlightText(task.name)}</div>
-                        <span class="text-[10px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"><div class="w-1.5 h-1.5 rounded-full" style="background-color:${task.color}"></div>${task.owner}</span>
+                        <div class="text-[13px] font-bold text-gray-600 line-through truncate flex-1 leading-snug">${highlightText(task.name)}</div>
+                        <span class="text-[10px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded flex items-center gap-1 shrink-0"><div class="w-1.5 h-1.5 rounded-full" style="background-color:${task.color}"></div>${task.owner}</span>
                     </div>
                     <div class="pl-[26px] flex items-start justify-between gap-3">
                         <div class="text-[11px] text-gray-500 leading-relaxed line-clamp-2 min-w-0 flex-1">${summary}</div>
@@ -4660,7 +4589,7 @@
                 let innerHtml = `
                     <div class="flex justify-between items-center mb-3 px-1 border-b border-${col.color}-200/50 pb-2">
                         <h3 class="text-[15px] font-bold ${headerClass} flex items-center gap-1.5">${col.emoji} ${col.title}</h3>
-                        <span class="bg-white text-xs font-semibold text-gray-500 px-2 py-0.5 rounded shadow-sm">${col.items.length}</span>
+                        <span class="bg-white text-xs font-bold text-gray-500 px-2 py-0.5 rounded shadow-sm">${col.items.length}</span>
                     </div>
                     <div class="flex flex-col gap-2 overflow-y-auto flex-1 pr-2">
                 `;
@@ -4677,7 +4606,7 @@
                                     ${alertHtml}
                                 </div>
                                 <div class="flex items-center justify-between mt-2.5">
-                                    <span class="text-[11px] font-medium text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">${t.owner}</span>
+                                    <span class="text-[11px] font-bold text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded shrink-0">${t.owner}</span>
                                     <span class="text-[12px] font-semibold text-gray-500 shrink-0">${t.end.substring(5)} 截止</span>
                                 </div>
                             </div>
@@ -4801,7 +4730,7 @@
                     const catRowTrack = document.createElement('div');
                     catRowTrack.className = 'border-b border-gray-200 bg-gray-100/50 flex items-center pl-2 sticky left-0 z-10 py-1.5';
                     catRowTrack.style.gridColumn = '1 / -1';
-                    catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-semibold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
+                    catRowTrack.innerHTML = `<span class="bg-white border border-gray-200 px-2 py-0.5 rounded shadow-sm text-[13px] font-bold text-gray-700 flex items-center gap-1.5"><div class="w-2.5 h-2.5 rounded-full" style="background-color: ${map[owner]}"></div>${owner}</span>`;
                     wrap.appendChild(catRowTrack);
 
                     if (shouldRenderEmptyOwner) {
@@ -4871,11 +4800,11 @@
                                 const textColor = getTextColor(task.color);
                                 bar.style.backgroundColor = task.color;
                                 bar.style.color = textColor;
-                                const nameW = measureBarText(task.name, '500 13px "Segoe UI", "Microsoft YaHei UI", sans-serif');
+                                const nameW = measureBarText(task.name, '600 13px Inter, sans-serif');
                                 const hasCjkOwner = /[\u3400-\u9fff]/.test(task.owner || '');
                                 const ownerFont = hasCjkOwner
-                                    ? '500 11px "Microsoft YaHei UI", "Microsoft YaHei", sans-serif'
-                                    : '600 10px "Segoe UI", sans-serif';
+                                    ? '600 11px "Microsoft YaHei UI", "Microsoft YaHei", sans-serif'
+                                    : '700 10px Inter, sans-serif';
                                 const ownerW = measureBarText(task.owner || '', ownerFont) + (hasCjkOwner ? 18 : 14);
                                 const barPx = renderedVisibleDuration * 110;
                                 const spare = barPx - 10 - nameW - 14;
@@ -4904,14 +4833,14 @@
                                 let ownerHtml = '';
                                 if (badgeMode === 'full') {
                                     const ownerBadgeClass = hasCjkOwner
-                                        ? 'text-[11px] font-medium px-2 py-[2px] rounded-md max-w-[60px]'
-                                        : 'text-[10px] font-semibold px-1.5 py-0.5 rounded-sm max-w-[50px]';
+                                        ? 'text-[11px] font-semibold px-2 py-[2px] rounded-md max-w-[60px]'
+                                        : 'text-[10px] font-bold px-1.5 py-0.5 rounded-sm max-w-[50px]';
                                     const ownerBadgeBg = hasCjkOwner ? 'rgba(0,0,0,0.08)' : 'rgba(0,0,0,0.12)';
                                     ownerHtml = `<div class="absolute right-1.5 top-1/2 -translate-y-1/2 ${ownerBadgeClass} leading-none truncate pointer-events-none" style="background-color: ${ownerBadgeBg}; color: ${textColor}">${task.owner}</div>`;
                                     rightElementsWidth += hasCjkOwner ? 52 : 45;
                                 } else if (badgeMode === 'initial') {
                                     const initial = (task.owner || '').trim().charAt(0).toUpperCase();
-                                    if (initial) ownerHtml = `<div class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-semibold w-[18px] h-[18px] flex items-center justify-center rounded-full pointer-events-none" style="background-color: rgba(0,0,0,0.12); color: ${textColor}">${initial}</div>`;
+                                    if (initial) ownerHtml = `<div class="absolute right-1 top-1/2 -translate-y-1/2 text-[10px] font-bold w-[18px] h-[18px] flex items-center justify-center rounded-full pointer-events-none" style="background-color: rgba(0,0,0,0.12); color: ${textColor}">${initial}</div>`;
                                 }
 
                                 bar.innerHTML = `
@@ -5021,7 +4950,7 @@
                         <div class="cdp-nav" onmousedown="event.stopPropagation()" onclick="cdpShift(1)"><svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
                     </div>
                 </div>
-                <div class="cdp-grid mb-1">${['一','二','三','四','五','六','日'].map((w,i)=>`<div class="h-7 flex items-center justify-center text-[11px] font-medium ${i>=5?'text-gray-300':'text-gray-400'}">${w}</div>`).join('')}</div>
+                <div class="cdp-grid mb-1">${['一','二','三','四','五','六','日'].map((w,i)=>`<div class="h-7 flex items-center justify-center text-[11px] font-bold ${i>=5?'text-gray-300':'text-gray-400'}">${w}</div>`).join('')}</div>
                 <div class="cdp-grid">`;
             const first = new Date(y, m, 1);
             const lead = (first.getDay() + 6) % 7;
@@ -5196,21 +5125,21 @@
             
             ['btnViewLog', 'viewGanttBtn', 'viewDeadlineBtn', 'viewPoolBtn'].forEach(id => {
                 const b = document.getElementById(id);
-                b.className = "px-3 py-1.5 text-[13px] font-semibold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative";
+                b.className = "px-3 py-1.5 text-[13px] font-bold rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-200/50 transition-all duration-200 focus:outline-none relative";
                 b.style.backgroundColor = '';
                 b.style.color = '';
             });
             
             if (mode === 'log') {
                 const b = document.getElementById('btnViewLog');
-                b.className = "px-3 py-1.5 text-[13px] font-semibold rounded-md shadow-sm transition-all duration-200 focus:outline-none breathe-btn active relative z-10";
+                b.className = "px-3 py-1.5 text-[13px] font-bold rounded-md shadow-sm transition-all duration-200 focus:outline-none breathe-btn active relative z-10";
                 b.style.backgroundColor = logBgColor;
                 b.style.color = getTextColor(logBgColor);
                 logPage.classList.remove('hidden');
                 logPage.classList.add('flex');
             } else {
                 const b = document.getElementById(mode === 'gantt' ? 'viewGanttBtn' : (mode === 'deadline' ? 'viewDeadlineBtn' : 'viewPoolBtn'));
-                b.className = "px-3 py-1.5 text-[13px] font-semibold rounded-md bg-white shadow-sm text-indigo-600 transition-all duration-200 focus:outline-none relative z-10";
+                b.className = "px-3 py-1.5 text-[13px] font-bold rounded-md bg-white shadow-sm text-indigo-600 transition-all duration-200 focus:outline-none relative z-10";
                 if (mode === 'pool') {
                     pool.classList.remove('hidden');
                     pool.classList.remove('h-auto', 'md:h-[380px]');
@@ -5238,15 +5167,15 @@
                 historyPanel.classList.add('hidden');
                 historyPanel.classList.remove('flex');
                 
-                btnForm.className = "flex-1 py-2 text-xs font-semibold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
-                btnHistory.className = "flex-1 py-2 text-xs font-semibold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
+                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
+                btnHistory.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
             } else {
                 formPanel.classList.add('hidden');
                 historyPanel.classList.remove('hidden');
                 historyPanel.classList.add('flex');
                 
-                btnForm.className = "flex-1 py-2 text-xs font-semibold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
-                btnHistory.className = "flex-1 py-2 text-xs font-semibold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
+                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
+                btnHistory.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
             }
         };
 
@@ -5261,15 +5190,15 @@
                 poolPanel.classList.add('hidden');
                 poolPanel.classList.remove('flex');
                 
-                btnForm.className = "flex-1 py-2 text-xs font-semibold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
-                btnPool.className = "flex-1 py-2 text-xs font-semibold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
+                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-r-0 transition-colors";
+                btnPool.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-white text-gray-500 border border-gray-200 border-l-0 transition-colors";
             } else {
                 formPanel.classList.add('hidden');
                 poolPanel.classList.remove('hidden');
                 poolPanel.classList.add('flex');
                 
-                btnForm.className = "flex-1 py-2 text-xs font-semibold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
-                btnPool.className = "flex-1 py-2 text-xs font-semibold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
+                btnForm.className = "flex-1 py-2 text-xs font-bold rounded-l-md bg-white text-gray-500 border border-gray-200 border-r-0 transition-colors";
+                btnPool.className = "flex-1 py-2 text-xs font-bold rounded-r-md bg-indigo-50 text-indigo-700 border border-indigo-200 border-l-0 transition-colors";
             }
         };
 
@@ -5336,7 +5265,7 @@
                     html += `
                     <div class="bg-white p-3.5 rounded-xl border border-gray-200 shadow-sm" data-owner="${owner}" data-taskid="${t.id}">
                         <div class="flex items-start justify-between gap-2 mb-2 relative">
-                            <div class="text-[13px] font-semibold text-gray-800 leading-snug flex-1 flex items-center gap-1.5 min-w-0">
+                            <div class="text-[13px] font-bold text-gray-800 leading-snug flex-1 flex items-center gap-1.5 min-w-0">
                                 <span class="truncate">${t.name}</span>
                                 ${t.details ? `
                                 <div class="relative group flex items-center shrink-0">
@@ -5348,7 +5277,7 @@
                                 </div>
                                 ` : ''}
                             </div>
-                            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded border ${isDue ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'} shrink-0">${isDue ? '截止' : '推进中'}</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded border ${isDue ? 'bg-red-50 text-red-600 border-red-100' : 'bg-blue-50 text-blue-600 border-blue-100'} shrink-0">${isDue ? '截止' : '推进中'}</span>
                         </div>
                         <div class="flex items-center gap-2 mb-2">
                             <select onchange="updateStatusColor(this)" class="smart-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-2 focus:ring-indigo-500/50 font-bold outline-none transition-colors">
@@ -5365,7 +5294,7 @@
                 html += `
                     <div class="bg-indigo-50/40 p-3.5 rounded-xl border border-indigo-200 border-dashed shadow-sm mt-1" data-owner="${owner}" data-custom="true">
                         <div class="flex items-center gap-2 mb-2">
-                            <span class="text-[10px] font-medium px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 shrink-0">自由任务</span>
+                            <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 text-indigo-700 shrink-0">自由任务</span>
                             <input type="text" class="smart-log-custom-name flex-1 px-2 py-1 border border-indigo-200 rounded text-xs focus:ring-2 focus:ring-indigo-500/50 bg-white placeholder-indigo-300/80 outline-none text-gray-800" placeholder="填写临时/突发任务名称 (若无请留空)...">
                         </div>
                         <div class="flex items-center gap-2 mb-2">
@@ -5567,9 +5496,9 @@
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'bg-gray-50 border border-gray-200 p-3.5 rounded-xl shadow-sm edit-log-item';
                     itemDiv.innerHTML = `
-                        <div class="font-semibold text-[13px] text-gray-800 mb-2 edit-log-name">${name}</div>
+                        <div class="font-bold text-[13px] text-gray-800 mb-2 edit-log-name">${name}</div>
                         <div class="flex items-center gap-2 mb-2">
-                            <select onchange="updateStatusColor(this)" class="edit-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-semibold outline-none transition-colors">
+                            <select onchange="updateStatusColor(this)" class="edit-log-status w-24 px-2 py-1.5 border border-gray-300 rounded-lg text-xs font-bold outline-none transition-colors">
                                 <option value="推进中" ${status === '推进中' ? 'selected' : ''}>推进中</option>
                                 <option value="已完成" ${status === '已完成' ? 'selected' : ''}>已完成</option>
                                 <option value="未完成" ${status === '未完成' ? 'selected' : ''}>未完成</option>
@@ -5658,22 +5587,22 @@
                 html += `
                     <div class="mb-8 relative">
                         <div class="absolute -left-[23px] top-1 w-2.5 h-2.5 bg-gray-200 rounded-full border-2 border-white"></div>
-                        <div class="text-xs font-semibold text-gray-500 mb-3 ml-2 flex items-center gap-2">${date}</div>
+                        <div class="text-xs font-bold text-gray-500 mb-3 ml-2 flex items-center gap-2">${date}</div>
                         <div class="flex flex-col gap-3 ml-2">
                 `;
                 grouped[date].forEach(log => {
                     const color = map[log.owner] || '#64748b';
                     let formattedContent = log.content.replace(/\n/g, '<br>');
-                    formattedContent = formattedContent.replace(/\[已完成\]/g, '<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-emerald-200">已完成</span>');
-                    formattedContent = formattedContent.replace(/\[推进中\]/g, '<span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-blue-200">推进中</span>');
-                    formattedContent = formattedContent.replace(/\[未完成\]/g, '<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-md text-[10px] font-medium border border-red-200">未完成</span>');
+                    formattedContent = formattedContent.replace(/\[已完成\]/g, '<span class="bg-emerald-100 text-emerald-700 px-1.5 py-0.5 rounded-md text-[10px] font-bold border border-emerald-200">已完成</span>');
+                    formattedContent = formattedContent.replace(/\[推进中\]/g, '<span class="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-md text-[10px] font-bold border border-blue-200">推进中</span>');
+                    formattedContent = formattedContent.replace(/\[未完成\]/g, '<span class="bg-red-100 text-red-700 px-1.5 py-0.5 rounded-md text-[10px] font-bold border border-red-200">未完成</span>');
                     formattedContent = makeLinksClickable(formattedContent);
 
                     html += `
                         <div class="bg-white border border-gray-200 p-4 rounded-xl text-sm grid grid-cols-[8px_1fr_auto] gap-3 items-start relative group transition-all hover:border-indigo-300 hover:shadow-md overflow-hidden">
                             <div class="w-2 h-2 rounded-full shrink-0 mt-1.5" style="background-color: ${color}"></div>
                             <div class="min-w-0 flex-1 overflow-hidden break-all history-rich-img">
-                                <div class="font-semibold text-[13px] mb-1.5 flex items-center gap-2" style="color: ${color}"><span>${log.owner}</span></div>
+                                <div class="font-bold text-[13px] mb-1.5 flex items-center gap-2" style="color: ${color}"><span>${log.owner}</span></div>
                                 <div class="text-gray-700 leading-relaxed break-words">${formattedContent}</div>
                             </div>
                             <div class="flex gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity md:static absolute right-3 top-3 bg-white/80 p-1 rounded-md backdrop-blur-sm">
