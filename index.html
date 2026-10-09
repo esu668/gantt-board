@@ -375,9 +375,12 @@
                     <input type="checkbox" id="editCompleted" class="w-4 h-4 text-indigo-600 bg-gray-100 border-gray-300 rounded focus:ring-indigo-500 cursor-pointer">
                     <label for="editCompleted" class="text-xs font-bold text-gray-600 cursor-pointer">将此任务标记为已完成</label>
                 </div>
-                <div class="flex justify-end gap-3 mt-2">
-                    <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
-                    <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 text-sm">保存修改</button>
+                <div class="flex items-center justify-between gap-3 mt-2">
+                    <button type="button" onclick="deleteEditingTask()" class="px-4 py-2 bg-red-50 text-red-600 border border-red-200 font-medium rounded-xl hover:bg-red-100 text-sm">删除任务</button>
+                    <div class="flex justify-end gap-3">
+                        <button type="button" onclick="closeEditModal()" class="px-4 py-2 bg-gray-100 text-gray-600 font-medium rounded-xl hover:bg-gray-200 text-sm">取消</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 text-sm">保存修改</button>
+                    </div>
                 </div>
             </form>
         </div>
@@ -1550,6 +1553,15 @@
 
         window.closeEditModal = function() {
             document.getElementById('editModal').classList.add('hidden');
+        };
+
+        window.deleteEditingTask = function() {
+            const id = document.getElementById('editTaskId').value;
+            const task = tasks.find(t => t.id === id);
+            if (!task) return;
+            if (!confirm(`确定删除任务「${task.name}」吗？删除后将从任务列表中移除。`)) return;
+            closeEditModal();
+            deleteTask(id);
         };
 
         document.getElementById('editForm').addEventListener('submit', function(e) {
